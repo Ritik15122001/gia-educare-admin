@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
   Globe, GraduationCap, Layers, Sparkles, Quote, Users, Milestone,
-  ShieldCheck, BarChart3, ListOrdered, HelpCircle, Table2, Tags, Newspaper, FolderTree, Clapperboard,
+  ShieldCheck, BarChart3, ListOrdered, HelpCircle, Table2, Tags, Newspaper, FolderTree, Clapperboard, ClipboardCheck,
 } from 'lucide-react';
 import { F, ICON_OPTIONS, GRADIENT_PRESETS } from './fieldTypes';
 
@@ -394,6 +394,7 @@ export const RESOURCES = {
       { name: 'title', label: 'Title', type: F.TEXT, required: true, full: true, placeholder: 'UK or Canada for the 2027 intake?' },
       { name: 'category', label: 'Category', type: F.SELECT, optionsFrom: 'post-categories', valueKey: 'key', labelKey: 'label', placeholder: 'No category', hint: '"Finances" posts fill the Finances menu; "Beginner Doubts" fill the Countries menu.' },
       { name: 'destination', label: 'Country', type: F.SELECT, optionsFrom: 'destinations', valueKey: 'slug', labelKey: 'name', placeholder: 'Not about one country', hint: 'Lists the article under that country in the menu and on its page.' },
+      { name: 'exam', label: 'Exam', type: F.SELECT, optionsFrom: 'exams', valueKey: 'slug', labelKey: 'name', placeholder: 'Not about one exam', hint: 'Lists the article under that exam in the Exams menu and on its page. "Exam Doubts" posts fill the menu\'s Beginner Doubts panel.' },
       { name: 'author', label: 'Author', type: F.TEXT, placeholder: 'Rhea Malhotra' },
       { name: 'publishedAt', label: 'Publish date', type: F.DATE, hint: 'Controls the order articles appear in.' },
       { name: 'coverUrl', label: 'Cover image', type: F.IMAGE, full: true, hint: 'Optional. Shown on the card and at the top of the article.' },
@@ -413,7 +414,7 @@ export const RESOURCES = {
     toForm: (row) => ({ ...row, publishedAt: row.publishedAt ? String(row.publishedAt).slice(0, 10) : '' }),
     defaults: {
       title: '', author: '', publishedAt: new Date().toISOString().slice(0, 10),
-      coverUrl: '', tags: [], category: '', destination: '', excerpt: '', body: '', published: true,
+      coverUrl: '', tags: [], category: '', destination: '', exam: '', excerpt: '', body: '', published: true,
     },
     schema: z.object({
       title: req('Title', 3).max(200),
@@ -424,8 +425,51 @@ export const RESOURCES = {
       tags: z.array(z.string()).max(10).optional(),
       category: opt(60),
       destination: opt(80),
+      exam: opt(80),
       excerpt: req('Excerpt', 20).max(400),
       body: req('Article body', 50).max(40000),
+      ...base,
+    }),
+  },
+
+  exams: {
+    name: 'exams',
+    label: 'Exams',
+    singular: 'Exam',
+    icon: ClipboardCheck,
+    group: 'Content',
+    description: 'English tests and admission exams in the website\'s Exams menu, the /exams page and each exam\'s own page.',
+    sortable: true,
+    publishable: true,
+    searchPlaceholder: 'Search exams…',
+    columns: [
+      { key: 'name', label: 'Exam', type: 'title', sub: 'fullName' },
+      { key: 'kind', label: 'Type', type: 'badge', width: 170 },
+      { key: 'typicalScore', label: 'Typical score', type: 'truncate' },
+      { key: 'acceptedIn', label: 'Countries', type: 'count', width: 90 },
+    ],
+    fields: [
+      { name: 'name', label: 'Short name', type: F.TEXT, required: true, placeholder: 'IELTS', hint: 'Shown in the menu. The page URL is created from this once and never changes.' },
+      { name: 'kind', label: 'Type', type: F.SELECT, options: ['English proficiency', 'Graduate admission', 'Undergraduate admission', 'Language (other)'].map((v) => ({ value: v, label: v })), placeholder: 'Select a type' },
+      { name: 'fullName', label: 'Full name', type: F.TEXT, full: true, placeholder: 'International English Language Testing System' },
+      { name: 'summary', label: 'One-line summary', type: F.TEXTAREA, full: true, rows: 2, hint: 'Shown in the Exams menu and on the exam card.' },
+      { name: 'description', label: 'About this exam', type: F.TEXTAREA, full: true, rows: 5 },
+      { name: 'typicalScore', label: 'Typical score needed', type: F.TEXT, full: true, placeholder: '6.5 overall, no band below 6.0, for most masters', hint: 'Indicative — shown in "Find colleges by exam".' },
+      { name: 'usedFor', label: 'Used for', type: F.TEXT, placeholder: 'Bachelors, masters and student visas' },
+      { name: 'officialUrl', label: 'Official website', type: F.TEXT, placeholder: 'https://ielts.org' },
+      { name: 'acceptedIn', label: 'Accepted in', type: F.TAGS, full: true, hint: 'Use country names exactly as in Destinations (e.g. United Kingdom) so they link to the country pages.' },
+      { name: 'facts', label: 'Pattern, scores & fees', type: F.PAIRS, full: true, hint: 'Score scale, duration, test fee in INR, validity, format…' },
+    ],
+    defaults: {
+      name: '', kind: '', fullName: '', summary: '', description: '', typicalScore: '', usedFor: '',
+      officialUrl: '', acceptedIn: [], facts: [], published: true,
+    },
+    schema: z.object({
+      name: req('Short name').max(40),
+      kind: opt(60), fullName: opt(160), summary: opt(300), description: opt(1500),
+      typicalScore: opt(120), usedFor: opt(120), officialUrl: opt(300),
+      acceptedIn: z.array(z.string()).max(12).optional(),
+      facts: z.array(z.object({ label: req('Label', 1), value: req('Value', 1) })).max(10).optional(),
       ...base,
     }),
   },
