@@ -49,21 +49,20 @@ function Routing() {
           <Route index element={<Dashboard />} />
           <Route path="profile" element={<Profile />} />
 
-          {/* Each screen is gated by the same permission the API enforces. */}
-          <Route element={<ProtectedRoute permission="content.manage" />}>
-            <Route path="content/:resource" element={<ResourceListPage />} />
-          </Route>
+          {/* Each screen is gated by the same permission the API enforces.
+              The content route checks its own module — it varies per :resource. */}
+          <Route path="content/:resource" element={<ResourceListPage />} />
           <Route element={<ProtectedRoute permission="leads.view" />}>
             <Route path="enquiries" element={<Enquiries />} />
             <Route path="enquiries/:id" element={<EnquiryDetail />} />
           </Route>
-          <Route element={<ProtectedRoute permission="sections.edit" />}>
+          <Route element={<ProtectedRoute permission={['sections.view', 'sections.edit']} />}>
             <Route path="sections" element={<Sections />} />
           </Route>
-          <Route element={<ProtectedRoute permission="media.upload" />}>
+          <Route element={<ProtectedRoute permission={['media.view', 'media.edit']} />}>
             <Route path="media" element={<Media />} />
           </Route>
-          <Route element={<ProtectedRoute permission="settings.manage" />}>
+          <Route element={<ProtectedRoute permission={['settings.view', 'settings.edit']} />}>
             <Route path="settings" element={<Settings />} />
             <Route path="settings/email" element={<EmailSettings />} />
           </Route>

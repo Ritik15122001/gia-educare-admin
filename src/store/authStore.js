@@ -31,3 +31,16 @@ export const useCan = (...perms) => {
   const user = useAuthStore((s) => s.user);
   return can(user, ...perms);
 };
+
+// Per-module helpers: modules are resource names ('destinations') and the
+// hand-written screens ('leads', 'sections', 'media', 'settings').
+export const canModule = (user, module, action = 'view') => (
+  action === 'view'
+    ? can(user, `${module}.view`, `${module}.edit`)
+    : can(user, `${module}.${action}`)
+);
+
+export const useCanModule = (module, action = 'view') => {
+  const user = useAuthStore((s) => s.user);
+  return canModule(user, module, action);
+};

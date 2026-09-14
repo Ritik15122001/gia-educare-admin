@@ -108,6 +108,8 @@ export default function DataTable({
   loading,
   sortable,
   publishable,
+  canEdit = true,
+  canDelete = true,
   onEdit,
   onDelete,
   onTogglePublish,
@@ -192,15 +194,15 @@ export default function DataTable({
 
               <td className="actions">
                 <div className="row-gap" style={{ justifyContent: 'flex-end', gap: 5 }}>
-                  {publishable && (
+                  {publishable && canEdit && (
                     <IconButton
                       icon={row.published ? EyeOff : Eye}
                       label={row.published ? 'Hide from site' : 'Publish'}
                       onClick={() => onTogglePublish?.(row)}
                     />
                   )}
-                  <IconButton icon={Pencil} label="Edit" onClick={() => onEdit?.(row)} />
-                  <IconButton icon={Trash2} label="Delete" onClick={() => onDelete?.(row)} />
+                  {canEdit && <IconButton icon={Pencil} label="Edit" onClick={() => onEdit?.(row)} />}
+                  {canDelete && <IconButton icon={Trash2} label="Delete" onClick={() => onDelete?.(row)} />}
                 </div>
               </td>
             </tr>

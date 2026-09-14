@@ -10,6 +10,7 @@ import { toast } from '../store/uiStore';
 import PageHeader from '../components/layout/PageHeader';
 import { Card, CardHead } from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { useCanModule } from '../store/authStore';
 import IconButton from '../components/ui/IconButton';
 import Spinner from '../components/ui/Spinner';
 import { Field, Input, Textarea, Switch } from '../components/forms/Field';
@@ -79,6 +80,7 @@ const schema = z.object({
 const FOUNDER_KEYS = ['name', 'title', 'photoUrl', 'message', 'email', 'phone', 'whatsapp', 'linkedin', 'instagram', 'youtube', 'twitter', 'facebook'];
 
 export default function Settings() {
+  const canEdit = useCanModule('settings', 'edit');
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({ queryKey: ['settings'], queryFn: settingsApi.get });
@@ -136,7 +138,7 @@ export default function Settings() {
   return (
     <form className="content-narrow" onSubmit={handleSubmit((values) => save.mutate(values))}>
       <PageHeader crumb="Site" title="Settings" sub="Brand, contact details, offices and SEO — everything the website reads globally.">
-        <Button type="submit" variant="gold" icon={Save} loading={save.isPending} disabled={!isDirty}>
+        <Button type="submit" variant="gold" icon={Save} loading={save.isPending} disabled={!isDirty || !canEdit}>
           {isDirty ? 'Save changes' : 'Saved'}
         </Button>
       </PageHeader>
@@ -318,7 +320,7 @@ export default function Settings() {
         </Card>
 
         <div className="row-gap" style={{ justifyContent: 'flex-end' }}>
-          <Button type="submit" variant="gold" icon={Save} loading={save.isPending} disabled={!isDirty}>
+          <Button type="submit" variant="gold" icon={Save} loading={save.isPending} disabled={!isDirty || !canEdit}>
             {isDirty ? 'Save changes' : 'Saved'}
           </Button>
         </div>

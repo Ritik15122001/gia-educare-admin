@@ -28,7 +28,10 @@ const schema = z.object({
   permissions: z.array(z.string()),
 });
 
-function RoleModal({ open, record, groups, onClose, onSubmit, saving }) {
+// Every key a module can grant, so "select all" and counts stay in one place.
+const keysOf = (m) => [...m.actions.map((a) => `${m.key}.${a}`), ...m.extras.map((e) => e.key)];
+
+function RoleModal({ open, record, groups, actions, onClose, onSubmit, saving }) {
   const isEdit = Boolean(record?.id);
   const {
     register,
@@ -47,19 +50,24 @@ function RoleModal({ open, record, groups, onClose, onSubmit, saving }) {
   });
 
   const permissions = watch('permissions');
-  const canViewLeads = permissions.includes('leads.view');
+  const has = (key) => permissions.includes(key);
+  const set = (next) => setValue('permissions', [...new Set(next)], { shouldDirty: true });
 
-  const toggle = (key, on) => {
-    const next = on ? [...new Set([...permissions, key])] : permissions.filter((p) => p !== key);
-    // Every other lead permission is meaningless without being able to see the lead.
-    const cleaned = key === 'leads.view' && !on ? next.filter((p) => !p.startsWith('leads.')) : next;
-    setValue('permissions', cleaned, { shouldDirty: true });
+  // View is the floor: editing or deleting implies it, and dropping it drops the rest.
+  const toggle = (module, action, on) => {
+    const key = `${module.key}.${action}`;
+    if (on) return set([...permissions, key, `${module.key}.view`]);
+    if (action === 'view') return set(permissions.filter((p) => !keysOf(module).includes(p)));
+    return set(permissions.filter((p) => p !== key));
   };
 
+  const toggleExtra = (module, key, on) => (
+    on ? set([...permissions, key, `${module.key}.view`]) : set(permissions.filter((p) => p !== key))
+  );
+
   const toggleGroup = (group, on) => {
-    const keys = group.permissions.map((p) => p.key);
-    const next = on ? [...new Set([...permissions, ...keys])] : permissions.filter((p) => !keys.includes(p));
-    setValue('permissions', next, { shouldDirty: true });
+    const keys = group.modules.flatMap(keysOf);
+    return on ? set([...permissions, ...keys]) : set(permissions.filter((p) => !keys.includes(p)));
   };
 
   return (
@@ -83,40 +91,75 @@ function RoleModal({ open, record, groups, onClose, onSubmit, saving }) {
         <Field label="Role name" required error={errors.name?.message}>
           <Input {...register('name')} placeholder="Canada Team" />
         </Field>
-        <Field label="Can see" hint={canViewLeads ? undefined : 'Only applies once “View enquiries” is ticked.'}>
-          <Select {...register('leadScope')} options={SCOPE_OPTIONS} disabled={!canViewLeads} />
+        <Field label="Can see" hint={has('leads.view') ? undefined : 'Applies once Enquiries → View is ticked.'}>
+          <Select {...register('leadScope')} options={SCOPE_OPTIONS} disabled={!has('leads.view')} />
         </Field>
         <Field label="Description" full error={errors.description?.message}>
           <Input {...register('description')} placeholder="Counsellors handling Canada admissions" />
         </Field>
       </div>
 
-      <div className="stack" style={{ gap: 12 }}>
+      <div className="stack" style={{ gap: 14 }}>
         {groups.map((group) => {
-          const keys = group.permissions.map((p) => p.key);
+          const keys = group.modules.flatMap(keysOf);
           const allOn = keys.every((k) => permissions.includes(k));
           return (
-            <div key={group.key} style={{ border: '1px solid var(--line-2)', borderRadius: 10 }}>
-              <div className="row-gap" style={{ justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid var(--line-2)' }}>
-                <b style={{ fontSize: '.85rem' }}>{group.label}</b>
+            <div className="perm-group" key={group.key}>
+              <div className="perm-group-head">
+                <b>{group.label}</b>
                 <button type="button" className="btn btn-sm btn-ghost" onClick={() => toggleGroup(group, !allOn)}>
                   {allOn ? 'Clear all' : 'Select all'}
                 </button>
               </div>
-              <div className="stack" style={{ gap: 10, padding: '12px 14px' }}>
-                {group.permissions.map((p) => {
-                  const needsView = p.key.startsWith('leads.') && p.key !== 'leads.view' && !canViewLeads;
-                  return (
-                    <Checkbox
-                      key={p.key}
-                      label={p.label}
-                      checked={permissions.includes(p.key)}
-                      disabled={needsView}
-                      onChange={(on) => toggle(p.key, on)}
-                    />
-                  );
-                })}
-              </div>
+
+              <table className="perm-table">
+                <thead>
+                  <tr>
+                    <th>Module</th>
+                    {actions.map((a) => <th key={a.key}>{a.label}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {group.modules.map((m) => (
+                    <tr key={m.key}>
+                      <td>
+                        <span className="perm-name">{m.label}</span>
+                        {m.extras.length > 0 && has(`${m.key}.view`) && (
+                          <span className="perm-extras">
+                            {m.extras.map((e) => (
+                              <Checkbox
+                                key={e.key}
+                                label={e.label}
+                                checked={has(e.key)}
+                                onChange={(on) => toggleExtra(m, e.key, on)}
+                              />
+                            ))}
+                          </span>
+                        )}
+                        {m.note && has(`${m.key}.view`) && <span className="perm-note">{m.note}</span>}
+                      </td>
+                      {actions.map((a) => {
+                        const supported = m.actions.includes(a.key);
+                        return (
+                          <td key={a.key} className="perm-cell">
+                            {supported ? (
+                              <label aria-label={`${m.label} — ${m.actionLabels?.[a.key] || a.label}`} title={m.actionLabels?.[a.key] || a.label}>
+                                <input
+                                  type="checkbox"
+                                  checked={has(`${m.key}.${a.key}`)}
+                                  onChange={(e) => toggle(m, a.key, e.target.checked)}
+                                />
+                              </label>
+                            ) : (
+                              <span className="muted">—</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           );
         })}
@@ -157,9 +200,12 @@ export default function Roles() {
   });
 
   const roles = data?.data || [];
-  const groups = data?.meta?.permissionGroups || [];
-  const labelOf = Object.fromEntries(groups.flatMap((g) => g.permissions.map((p) => [p.key, p.label])));
-  const total = Object.keys(labelOf).length;
+  const groups = data?.meta?.moduleGroups || [];
+  const actions = data?.meta?.actions || [];
+  const modules = groups.flatMap((g) => g.modules);
+
+  // What a role can reach, for the list: module names it can at least view.
+  const modulesOf = (role) => modules.filter((m) => role.permissions.some((p) => p === `${m.key}.view` || p === `${m.key}.edit`));
 
   const handleSubmit = (values) => {
     if (editing?.id) update.mutate({ id: editing.id, payload: values });
@@ -178,7 +224,7 @@ export default function Roles() {
 
   return (
     <div className="content-narrow">
-      <PageHeader crumb="Site" title="Roles & permissions" sub="What each role can open and change, and which enquiries its members see.">
+      <PageHeader crumb="Site" title="Roles & permissions" sub="Pick the modules each role can open, and what it may do in them.">
         <Link to="/users">
           <Button variant="ghost" icon={Users2}>Team accounts</Button>
         </Link>
@@ -208,6 +254,7 @@ export default function Roles() {
               <tbody>
                 {roles.map((r) => {
                   const locked = r.key === 'super_admin';
+                  const reach = modulesOf(r);
                   const leads = r.permissions.includes('leads.view');
                   return (
                     <tr key={r.id}>
@@ -217,21 +264,22 @@ export default function Roles() {
                         </div>
                         <div className="row-sub">{r.description || '—'}</div>
                         <div className="row-gap" style={{ gap: 5, marginTop: 6 }}>
-                          {locked ? (
-                            <Badge tone="gold">Full access</Badge>
-                          ) : total && r.permissions.length === total ? (
-                            <Badge tone="gold">All permissions (except team &amp; roles)</Badge>
-                          ) : r.permissions.length ? (
-                            r.permissions.map((p) => <Badge key={p} tone="info">{labelOf[p] || p}</Badge>)
+                          {locked || reach.length === modules.length ? (
+                            <Badge tone="gold">All {modules.length} modules</Badge>
+                          ) : reach.length ? (
+                            <>
+                              {reach.slice(0, 4).map((m) => <Badge key={m.key} tone="info">{m.label}</Badge>)}
+                              {reach.length > 4 && <Badge tone="neutral">+{reach.length - 4} more</Badge>}
+                            </>
                           ) : (
-                            <span className="tiny muted">No permissions</span>
+                            <span className="tiny muted">No modules</span>
                           )}
                         </div>
                       </td>
                       <td>
-                        {!leads ? (
+                        {!leads && !locked ? (
                           <span className="muted">—</span>
-                        ) : r.leadScope === 'all' ? (
+                        ) : r.leadScope === 'all' || locked ? (
                           <Badge tone="gold">All</Badge>
                         ) : (
                           <Badge tone="warn">Assigned only</Badge>
@@ -257,6 +305,7 @@ export default function Roles() {
         open={Boolean(editing)}
         record={editing?.id ? editing : null}
         groups={groups}
+        actions={actions}
         onClose={() => setEditing(null)}
         onSubmit={handleSubmit}
         saving={create.isPending || update.isPending}

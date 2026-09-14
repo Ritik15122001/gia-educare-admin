@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Inbox, Settings, Users2, Image, FileText, LogOut, ExternalLink, ShieldCheck, Mail,
 } from 'lucide-react';
 import { RESOURCE_LIST } from '../../config/resources';
-import { useAuthStore, can } from '../../store/authStore';
+import { useAuthStore, can, canModule } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
 import IconButton from '../ui/IconButton';
 import { cn } from '../../utils/cn';
@@ -14,6 +14,9 @@ export default function Sidebar({ enquiryCount, onLogout }) {
   const closeSidebar = useUiStore((s) => s.closeSidebar);
   const isSuperAdmin = user?.role === 'super_admin';
 
+
+  // Only the collections this role may open.
+  const visibleResources = RESOURCE_LIST.filter((r) => canModule(user, r.name));
 
   const item = (to, label, Icon, extra) => (
     <NavLink key={to} to={to} end={to === '/' || to === '/settings'} className={({ isActive }) => cn('nav-item', isActive && 'active')} onClick={closeSidebar}>
@@ -44,20 +47,20 @@ export default function Sidebar({ enquiryCount, onLogout }) {
           enquiryCount > 0 ? <span className="count">{enquiryCount}</span> : null,
         )}
 
-        {can(user, 'content.manage') && (
+        {visibleResources.length > 0 && (
           <>
             <div className="nav-group-label">Content</div>
-            {RESOURCE_LIST.map((r) => item(`/content/${r.name}`, r.label, r.icon))}
+            {visibleResources.map((r) => item(`/content/${r.name}`, r.label, r.icon))}
           </>
         )}
 
-        {can(user, 'sections.edit', 'media.upload', 'settings.manage') || isSuperAdmin ? (
+        {canModule(user, 'sections') || canModule(user, 'media') || canModule(user, 'settings') || isSuperAdmin ? (
           <div className="nav-group-label">Site</div>
         ) : null}
-        {can(user, 'sections.edit') && item('/sections', 'Section copy', FileText)}
-        {can(user, 'media.upload') && item('/media', 'Media', Image)}
-        {can(user, 'settings.manage') && item('/settings', 'Settings', Settings)}
-        {can(user, 'settings.manage') && item('/settings/email', 'Email & SMTP', Mail)}
+        {canModule(user, 'sections') && item('/sections', 'Section copy', FileText)}
+        {canModule(user, 'media') && item('/media', 'Media', Image)}
+        {canModule(user, 'settings') && item('/settings', 'Settings', Settings)}
+        {canModule(user, 'settings') && item('/settings/email', 'Email & SMTP', Mail)}
         {isSuperAdmin && item('/users', 'Team accounts', Users2)}
         {isSuperAdmin && item('/roles', 'Roles & permissions', ShieldCheck)}
 

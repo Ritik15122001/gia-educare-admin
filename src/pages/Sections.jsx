@@ -7,6 +7,7 @@ import { toast } from '../store/uiStore';
 import PageHeader from '../components/layout/PageHeader';
 import { Card, CardHead } from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { useCanModule } from '../store/authStore';
 import IconButton from '../components/ui/IconButton';
 import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
@@ -62,6 +63,7 @@ function EditModal({ section, onClose, onSave, saving }) {
 }
 
 export default function Sections() {
+  const canEdit = useCanModule('sections', 'edit');
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(null);
 
@@ -119,7 +121,7 @@ export default function Sections() {
                         </div>
                       )}
                     </div>
-                    <IconButton icon={Pencil} label="Edit copy" onClick={() => setEditing(s)} />
+                    {canEdit && <IconButton icon={Pencil} label="Edit copy" onClick={() => setEditing(s)} />}
                   </div>
                 ))}
               </div>

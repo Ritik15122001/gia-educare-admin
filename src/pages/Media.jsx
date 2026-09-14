@@ -18,6 +18,7 @@ export default function Media() {
   const queryClient = useQueryClient();
   const inputRef = useRef(null);
   const canDelete = useCan('media.delete');
+  const canUpload = useCan('media.edit');
 
   const { data, isLoading } = useQuery({ queryKey: ['media'], queryFn: mediaApi.list });
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['media'] });
@@ -49,9 +50,11 @@ export default function Media() {
   return (
     <>
       <PageHeader crumb="Site" title="Media" sub="Images available to team photos, destination cards and site settings.">
-        <Button variant="gold" icon={Upload} loading={upload.isPending} onClick={() => inputRef.current?.click()}>
-          Upload image
-        </Button>
+        {canUpload && (
+          <Button variant="gold" icon={Upload} loading={upload.isPending} onClick={() => inputRef.current?.click()}>
+            Upload image
+          </Button>
+        )}
       </PageHeader>
 
       <input

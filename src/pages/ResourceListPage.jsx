@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
 import { getResourceConfig } from '../config/resources';
@@ -7,6 +7,7 @@ import { resourceApi } from '../api';
 import { useResource } from '../hooks/useResource';
 import { useDebounced } from '../hooks/useDebounced';
 import { confirmDialog } from '../store/uiStore';
+import { useAuthStore, canModule } from '../store/authStore';
 import PageHeader from '../components/layout/PageHeader';
 import { Card } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -19,6 +20,10 @@ import Pagination from '../components/data/Pagination';
 export default function ResourceListPage() {
   const { resource } = useParams();
   const config = getResourceConfig(resource);
+  const user = useAuthStore((s) => s.user);
+  const canView = canModule(user, resource);
+  const canEdit = canModule(user, resource, 'edit');
+  const canDelete = canModule(user, resource, 'delete');
 
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({});
@@ -44,6 +49,8 @@ export default function ResourceListPage() {
   });
 
   if (!config) return <EmptyState title="Unknown collection" message={`No configuration for “${resource}”.`} />;
+  // The API refuses it too; this just keeps a stray link from showing an error screen.
+  if (!canView) return <Navigate to="/" replace />;
 
   const rows = list.data?.data || [];
   const meta = list.data?.meta;
@@ -69,9 +76,11 @@ export default function ResourceListPage() {
   return (
     <>
       <PageHeader crumb="Content" title={config.label} sub={config.description}>
-        <Button variant="gold" icon={Plus} onClick={() => setEditing({})}>
-          New {config.singular.toLowerCase()}
-        </Button>
+        {canEdit && (
+          <Button variant="gold" icon={Plus} onClick={() => setEditing({})}>
+            New {config.singular.toLowerCase()}
+          </Button>
+        )}
       </PageHeader>
 
       <Card>
@@ -122,7 +131,7 @@ export default function ResourceListPage() {
           )}
 
           <span className="tiny muted" style={{ marginLeft: 'auto' }}>
-            {config.sortable && !isSearching ? 'Drag rows to reorder' : `${meta?.total ?? 0} record(s)`}
+            {config.sortable && canEdit && !isSearching ? 'Drag rows to reorder' : `${meta?.total ?? 0} record(s)`}
           </span>
         </div>
 
@@ -130,8 +139,10 @@ export default function ResourceListPage() {
           rows={rows}
           columns={config.columns}
           loading={list.isLoading}
-          sortable={config.sortable && !isSearching}
+          sortable={config.sortable && canEdit && !isSearching}
           publishable={config.publishable}
+          canEdit={canEdit}
+          canDelete={canDelete}
           onEdit={setEditing}
           onDelete={handleDelete}
           onTogglePublish={(row) => togglePublish.mutate(row.id)}
@@ -146,7 +157,7 @@ export default function ResourceListPage() {
                   : `Add your first ${config.singular.toLowerCase()} — it appears on the website as soon as it is published.`
               }
               action={
-                !isSearching && (
+                !isSearching && canEdit && (
                   <Button variant="gold" icon={Plus} onClick={() => setEditing({})}>
                     New {config.singular.toLowerCase()}
                   </Button>

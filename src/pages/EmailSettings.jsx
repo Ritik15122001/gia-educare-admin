@@ -9,6 +9,7 @@ import { toast } from '../store/uiStore';
 import PageHeader from '../components/layout/PageHeader';
 import { Card, CardHead } from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { useCanModule } from '../store/authStore';
 import IconButton from '../components/ui/IconButton';
 import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
@@ -211,6 +212,7 @@ function DeliveryLog() {
 }
 
 export default function EmailSettings() {
+  const canEdit = useCanModule('settings', 'edit');
   const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
   const [preset, setPreset] = useState(null);
@@ -324,7 +326,7 @@ export default function EmailSettings() {
   return (
     <form className="content-narrow" onSubmit={handleSubmit((values) => save.mutate(values))} noValidate>
       <PageHeader crumb="Site" title="Email & SMTP" sub="Connect your mail server so every new lead emails your team and sends the student a confirmation.">
-        <Button type="submit" variant="gold" icon={Save} loading={save.isPending} disabled={!isDirty}>
+        <Button type="submit" variant="gold" icon={Save} loading={save.isPending} disabled={!isDirty || !canEdit}>
           {isDirty ? 'Save changes' : 'Saved'}
         </Button>
       </PageHeader>
@@ -460,7 +462,7 @@ export default function EmailSettings() {
         <DeliveryLog />
 
         <div className="row-gap" style={{ justifyContent: 'flex-end' }}>
-          <Button type="submit" variant="gold" icon={Save} loading={save.isPending} disabled={!isDirty}>
+          <Button type="submit" variant="gold" icon={Save} loading={save.isPending} disabled={!isDirty || !canEdit}>
             {isDirty ? 'Save changes' : 'Saved'}
           </Button>
         </div>
