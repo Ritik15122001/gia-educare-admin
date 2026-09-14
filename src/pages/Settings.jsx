@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Save, Plus, Trash2, Send } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Save, Plus, Trash2, Mail } from 'lucide-react';
 import { settingsApi } from '../api';
 import { toast } from '../store/uiStore';
 import PageHeader from '../components/layout/PageHeader';
@@ -12,7 +13,6 @@ import Button from '../components/ui/Button';
 import IconButton from '../components/ui/IconButton';
 import Spinner from '../components/ui/Spinner';
 import { Field, Input, Textarea, Switch } from '../components/forms/Field';
-import Badge from '../components/ui/Badge';
 import ImagePicker from '../components/forms/ImagePicker';
 import { Controller } from 'react-hook-form';
 
@@ -77,54 +77,6 @@ const schema = z.object({
 });
 
 const FOUNDER_KEYS = ['name', 'title', 'photoUrl', 'message', 'email', 'phone', 'whatsapp', 'linkedin', 'instagram', 'youtube', 'twitter', 'facebook'];
-
-// SMTP status plus a real test send, so "is email working?" has a direct answer.
-function EmailCard({ defaultTo }) {
-  const [to, setTo] = useState('');
-  const { data: status } = useQuery({ queryKey: ['settings', 'email'], queryFn: settingsApi.emailStatus });
-  const test = useMutation({
-    mutationFn: (address) => settingsApi.sendTestEmail(address),
-    onSuccess: ({ data }) => toast(data.message),
-    onError: (err) => toast(err.message, 'err'),
-  });
-  const enabled = status?.data?.enabled;
-
-  return (
-    <Card>
-      <CardHead title="Email notifications" sub="New-lead alerts to your team and a confirmation to every student">
-        {status && (enabled ? <Badge tone="ok">Connected · {status.data.host}</Badge> : <Badge tone="warn">Not connected</Badge>)}
-      </CardHead>
-      <div className="card-pad">
-        {!enabled && status && (
-          <p className="tiny muted" style={{ marginBottom: 14 }}>
-            Emails are currently only logged by the server. To send them, set <code className="mono">SMTP_HOST</code>,{' '}
-            <code className="mono">SMTP_USER</code>, <code className="mono">SMTP_PASS</code> and{' '}
-            <code className="mono">EMAIL_FROM</code> in the backend environment (Gmail, Zoho, SES or SendGrid all work), then restart it.
-          </p>
-        )}
-        <p className="tiny muted" style={{ marginBottom: 14 }}>
-          Sent automatically: a new-lead alert to the addresses in <b>Notify enquiries to</b> above, a confirmation to the student,
-          and a welcome email when you add a team account.{enabled && ` Sending as ${status.data.from}.`}
-        </p>
-        <div className="row-gap" style={{ alignItems: 'flex-end' }}>
-          <Field label="Send a test email to">
-            <Input type="email" value={to} placeholder={defaultTo || 'you@giaeducare.com'} onChange={(e) => setTo(e.target.value)} />
-          </Field>
-          <Button
-            variant="primary"
-            icon={Send}
-            loading={test.isPending}
-            disabled={!enabled}
-            style={{ marginBottom: 16 }}
-            onClick={() => test.mutate(to.trim() || defaultTo)}
-          >
-            Send test
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-}
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -239,14 +191,6 @@ export default function Settings() {
               <Field label="Short address" error={errors.addressLine?.message} hint="One-line address in the footer.">
                 <Input {...register('addressLine')} />
               </Field>
-              <Field
-                label="Notify enquiries to"
-                full
-                error={errors.notifyEnquiriesTo?.message}
-                hint="Every new lead is emailed here. Separate several addresses with commas."
-              >
-                <Input {...register('notifyEnquiriesTo')} placeholder="leads@giaeducare.com, counsellors@giaeducare.com" />
-              </Field>
             </div>
           </div>
         </Card>
@@ -289,7 +233,15 @@ export default function Settings() {
           </div>
         </Card>
 
-        <EmailCard defaultTo={data?.data?.notifyEnquiriesTo?.split(',')[0]?.trim() || data?.data?.emailPrimary} />
+        <Card>
+          <CardHead title="Email notifications" sub="SMTP server, sender, new-lead alerts and the delivery log now have their own page.">
+            <Link to="/settings/email">
+              <Button variant="subtle" size="sm" icon={Mail}>
+                Open Email &amp; SMTP
+              </Button>
+            </Link>
+          </CardHead>
+        </Card>
 
         <Card>
           <CardHead title="Founder connect" sub="A personal note from the founder, with direct ways to reach them. Shown on the home and about pages.">

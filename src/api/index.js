@@ -49,8 +49,16 @@ export const sectionApi = {
 export const settingsApi = {
   get: () => api.get('/admin/settings'),
   update: (payload) => api.patch('/admin/settings', payload),
-  emailStatus: () => api.get('/admin/settings/email'),
-  sendTestEmail: (to) => api.post('/admin/settings/email/test', { to }),
+};
+
+// Email & SMTP: credentials, lead notification switches, delivery log, previews.
+export const emailApi = {
+  get: () => api.get('/admin/settings/email'),
+  update: (payload) => api.put('/admin/settings/email', payload),
+  verify: (smtp) => api.post('/admin/settings/email/verify', smtp),
+  sendTest: (to) => api.post('/admin/settings/email/test', { to }),
+  logs: () => api.get('/admin/settings/email/logs'),
+  preview: (template) => api.get(`/admin/settings/email/preview/${template}`),
 };
 
 // Arithmetic image captcha — the answer is verified server-side.

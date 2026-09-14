@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Inbox, Settings, Users2, Image, FileText, LogOut, ExternalLink, ShieldCheck,
+  LayoutDashboard, Inbox, Settings, Users2, Image, FileText, LogOut, ExternalLink, ShieldCheck, Mail,
 } from 'lucide-react';
 import { RESOURCE_LIST } from '../../config/resources';
 import { useAuthStore, can } from '../../store/authStore';
@@ -16,7 +16,7 @@ export default function Sidebar({ enquiryCount, onLogout }) {
 
 
   const item = (to, label, Icon, extra) => (
-    <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => cn('nav-item', isActive && 'active')} onClick={closeSidebar}>
+    <NavLink key={to} to={to} end={to === '/' || to === '/settings'} className={({ isActive }) => cn('nav-item', isActive && 'active')} onClick={closeSidebar}>
       <Icon />
       <span>{label}</span>
       {extra}
@@ -57,6 +57,7 @@ export default function Sidebar({ enquiryCount, onLogout }) {
         {can(user, 'sections.edit') && item('/sections', 'Section copy', FileText)}
         {can(user, 'media.upload') && item('/media', 'Media', Image)}
         {can(user, 'settings.manage') && item('/settings', 'Settings', Settings)}
+        {can(user, 'settings.manage') && item('/settings/email', 'Email & SMTP', Mail)}
         {isSuperAdmin && item('/users', 'Team accounts', Users2)}
         {isSuperAdmin && item('/roles', 'Roles & permissions', ShieldCheck)}
 

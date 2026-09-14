@@ -15,6 +15,7 @@ const Enquiries = lazy(() => import('./pages/Enquiries'));
 const EnquiryDetail = lazy(() => import('./pages/EnquiryDetail'));
 const Sections = lazy(() => import('./pages/Sections'));
 const Settings = lazy(() => import('./pages/Settings'));
+const EmailSettings = lazy(() => import('./pages/EmailSettings'));
 const Media = lazy(() => import('./pages/Media'));
 const Users = lazy(() => import('./pages/Users'));
 const Roles = lazy(() => import('./pages/Roles'));
@@ -64,6 +65,7 @@ function Routing() {
           </Route>
           <Route element={<ProtectedRoute permission="settings.manage" />}>
             <Route path="settings" element={<Settings />} />
+            <Route path="settings/email" element={<EmailSettings />} />
           </Route>
           {/* Team accounts and roles are never grantable — super admin only. */}
           <Route element={<ProtectedRoute roles={['super_admin']} />}>
