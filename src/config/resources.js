@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
   Globe, GraduationCap, Layers, Sparkles, Quote, Users, Milestone,
-  ShieldCheck, BarChart3, ListOrdered, HelpCircle, Table2, Tags, Newspaper, FolderTree, Clapperboard, ClipboardCheck,
+  ShieldCheck, BarChart3, ListOrdered, HelpCircle, Table2, Tags, Newspaper, FolderTree, Clapperboard, ClipboardCheck, Building2,
 } from 'lucide-react';
 import { F, ICON_OPTIONS, GRADIENT_PRESETS } from './fieldTypes';
 
@@ -470,6 +470,37 @@ export const RESOURCES = {
       typicalScore: opt(120), usedFor: opt(120), officialUrl: opt(300),
       acceptedIn: z.array(z.string()).max(12).optional(),
       facts: z.array(z.object({ label: req('Label', 1), value: req('Value', 1) })).max(10).optional(),
+      ...base,
+    }),
+  },
+
+  clients: {
+    name: 'clients',
+    label: 'Clients & partners',
+    singular: 'Client',
+    icon: Building2,
+    group: 'Content',
+    description: 'The university and business-school logos shown on the home page. Drag to reorder; hide one to take it off the site.',
+    sortable: true,
+    publishable: true,
+    searchPlaceholder: 'Search institutions…',
+    columns: [
+      { key: 'logoUrl', label: '', type: 'thumb', width: 90 },
+      { key: 'name', label: 'Institution', type: 'title', sub: 'country' },
+      { key: 'websiteUrl', label: 'Website', type: 'truncate' },
+    ],
+    fields: [
+      { name: 'name', label: 'Institution name', type: F.TEXT, required: true, full: true, placeholder: 'Northeastern University', hint: 'Shown as text if no logo is uploaded.' },
+      { name: 'country', label: 'Country', type: F.TEXT, placeholder: 'United States' },
+      { name: 'websiteUrl', label: 'Website', type: F.TEXT, placeholder: 'https://www.northeastern.edu', hint: 'Optional — makes the logo clickable.' },
+      { name: 'logoUrl', label: 'Logo', type: F.IMAGE, full: true, hint: 'A PNG or SVG with a transparent or white background works best. Around 400px wide is plenty.' },
+    ],
+    defaults: { name: '', country: '', websiteUrl: '', logoUrl: '', published: true },
+    schema: z.object({
+      name: req('Institution name'),
+      country: opt(60),
+      websiteUrl: opt(500),
+      logoUrl: opt(500),
       ...base,
     }),
   },
