@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Upload, Trash2, Copy, Image as ImageIcon } from 'lucide-react';
 import { mediaApi } from '../api';
-import { useAuthStore } from '../store/authStore';
+import { useCan } from '../store/authStore';
 import { confirmDialog, toast } from '../store/uiStore';
 import { relativeTime } from '../utils/format';
 import PageHeader from '../components/layout/PageHeader';
@@ -17,8 +17,7 @@ const kb = (bytes) => `${Math.max(1, Math.round(bytes / 1024))} KB`;
 export default function Media() {
   const queryClient = useQueryClient();
   const inputRef = useRef(null);
-  const role = useAuthStore((s) => s.user?.role);
-  const canDelete = ['super_admin', 'admin'].includes(role);
+  const canDelete = useCan('media.delete');
 
   const { data, isLoading } = useQuery({ queryKey: ['media'], queryFn: mediaApi.list });
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['media'] });

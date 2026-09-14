@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Mail, Phone, MessageSquare, Send, Trash2 } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MessageSquare, Send, Trash2, UserCheck } from 'lucide-react';
 import { enquiryApi } from '../api';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore, can } from '../store/authStore';
 import { confirmDialog, toast } from '../store/uiStore';
 import { STATUS_OPTIONS, STATUS_TONE } from '../utils/enquiryStatus';
 import { formatDateTime, relativeTime, initialsOf } from '../utils/format';
@@ -30,8 +30,12 @@ export default function EnquiryDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const role = useAuthStore((s) => s.user?.role);
+  const user = useAuthStore((s) => s.user);
+  const canEdit = can(user, 'leads.edit');
+  const canAssign = can(user, 'leads.assign');
   const [note, setNote] = useState('');
+  // Draft assignment; null = untouched, so it follows the saved value.
+  const [draft, setDraft] = useState(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['enquiry', id],
@@ -46,6 +50,20 @@ export default function EnquiryDetail() {
   const updateStatus = useMutation({
     mutationFn: (status) => enquiryApi.update(id, { status }),
     onSuccess: () => { invalidate(); toast('Status updated'); },
+    onError: (err) => toast(err.message, 'err'),
+  });
+
+  const { data: assigneeData } = useQuery({
+    queryKey: ['assignees'],
+    queryFn: enquiryApi.assignees,
+    enabled: canAssign,
+    staleTime: 60_000,
+  });
+  const assignees = assigneeData?.data || { roles: [], users: [] };
+
+  const assign = useMutation({
+    mutationFn: (payload) => enquiryApi.update(id, payload),
+    onSuccess: () => { invalidate(); setDraft(null); toast('Assignment saved'); },
     onError: (err) => toast(err.message, 'err'),
   });
 
@@ -65,6 +83,19 @@ export default function EnquiryDetail() {
   if (error) return <EmptyState title="Enquiry not found" message={error.message} action={<Link to="/enquiries"><Button variant="ghost">Back to enquiries</Button></Link>} />;
 
   const e = data.data;
+  const saved = { assignedRole: e.assignedRole || '', assignedTo: e.assignedTo?.id || null };
+  const current = draft || saved;
+  const dirty = current.assignedRole !== saved.assignedRole || current.assignedTo !== saved.assignedTo;
+  const roleOptions = assignees.roles.map((r) => ({ value: r.key, label: r.leadScope === 'all' ? `${r.name} (sees all leads)` : r.name }));
+  if (saved.assignedRole && !roleOptions.some((o) => o.value === saved.assignedRole)) {
+    roleOptions.push({ value: saved.assignedRole, label: e.assignedRoleName || saved.assignedRole });
+  }
+  const peopleOptions = assignees.users
+    .filter((u) => u.role === current.assignedRole)
+    .map((u) => ({ value: u.id, label: u.name }));
+  if (saved.assignedTo && current.assignedTo === saved.assignedTo && !peopleOptions.some((o) => o.value === saved.assignedTo)) {
+    peopleOptions.push({ value: saved.assignedTo, label: e.assignedTo.name });
+  }
 
   const handleDelete = async () => {
     const confirmed = await confirmDialog({
@@ -83,7 +114,7 @@ export default function EnquiryDetail() {
       </Link>
 
       <PageHeader crumb={`Received ${relativeTime(e.createdAt)}`} title={e.name}>
-        {['super_admin', 'admin'].includes(role) && (
+        {can(user, 'leads.delete') && (
           <Button variant="ghost" icon={Trash2} onClick={handleDelete}>
             Delete
           </Button>
@@ -117,6 +148,7 @@ export default function EnquiryDetail() {
           <CardHead title="What they told us" />
           <div>
             <DetailRow label="Destination" value={e.destination} />
+            <DetailRow label="Budget" value={e.budget} />
             <DetailRow label="Study level" value={e.level} />
             <DetailRow label="Intake" value={e.intake} />
             <DetailRow label="Test status" value={e.test} />
@@ -128,11 +160,67 @@ export default function EnquiryDetail() {
         </Card>
 
         <Card>
+          <CardHead title="Referral & attribution" sub="How this student found you" />
+          <div>
+            <DetailRow label="Referral" value={e.referral} />
+            <DetailRow label="UTM source" value={e.utmSource} />
+            <DetailRow label="UTM medium" value={e.utmMedium} />
+            <DetailRow label="UTM campaign" value={e.utmCampaign} />
+            <DetailRow label="Landing page" value={e.landingPage} />
+            <DetailRow label="Referring site" value={e.referrerUrl} />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHead title="Assignment" sub="Everyone in the role sees this lead; pick a person to make one of them responsible">
+            {e.assignedAt && <span className="tiny muted">Assigned {relativeTime(e.assignedAt)}</span>}
+          </CardHead>
+          {canAssign ? (
+            <div className="card-pad">
+              <div className="form-grid">
+                <Field label="Role / team">
+                  <Select
+                    placeholder="Unassigned"
+                    value={current.assignedRole}
+                    options={roleOptions}
+                    onChange={(ev) => setDraft({ assignedRole: ev.target.value, assignedTo: null })}
+                  />
+                </Field>
+                <Field label="Person" hint={current.assignedRole ? undefined : 'Choose a role first.'}>
+                  <Select
+                    placeholder={current.assignedRole ? 'Whole team' : '—'}
+                    value={current.assignedTo || ''}
+                    options={peopleOptions}
+                    disabled={!current.assignedRole}
+                    onChange={(ev) => setDraft({ ...current, assignedTo: ev.target.value || null })}
+                  />
+                </Field>
+              </div>
+              <div className="row-gap">
+                <Button variant="primary" size="sm" icon={UserCheck} loading={assign.isPending} disabled={!dirty} onClick={() => assign.mutate(current)}>
+                  Save assignment
+                </Button>
+                {dirty && <Button variant="ghost" size="sm" onClick={() => setDraft(null)}>Reset</Button>}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <DetailRow label="Role / team" value={e.assignedRoleName || e.assignedRole} />
+              <DetailRow label="Person" value={e.assignedTo?.name || (e.assignedRole ? 'Whole team' : '')} />
+            </div>
+          )}
+        </Card>
+
+        <Card>
           <CardHead title="Pipeline status" sub="Where this lead sits right now" />
           <div className="card-pad" style={{ maxWidth: 280 }}>
-            <Field label="Status">
-              <Select value={e.status} options={STATUS_OPTIONS} onChange={(ev) => updateStatus.mutate(ev.target.value)} />
-            </Field>
+            {canEdit ? (
+              <Field label="Status">
+                <Select value={e.status} options={STATUS_OPTIONS} onChange={(ev) => updateStatus.mutate(ev.target.value)} />
+              </Field>
+            ) : (
+              <Badge tone={STATUS_TONE[e.status]}>{e.status}</Badge>
+            )}
           </div>
         </Card>
 
@@ -157,6 +245,7 @@ export default function EnquiryDetail() {
             <p className="card-pad tiny muted">No notes yet. Log what happened on the call so the next person has context.</p>
           )}
 
+          {canEdit && (
           <div className="card-pad" style={{ borderTop: '1px solid var(--line-2)' }}>
             <Field label="Add a note">
               <Textarea
@@ -177,6 +266,7 @@ export default function EnquiryDetail() {
               Save note
             </Button>
           </div>
+          )}
         </Card>
       </div>
     </div>

@@ -7,11 +7,13 @@ import { LogIn } from 'lucide-react';
 import { authApi } from '../api';
 import { useAuthStore } from '../store/authStore';
 import { Field, Input } from '../components/forms/Field';
+import CaptchaField from '../components/forms/CaptchaField';
 import Button from '../components/ui/Button';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
   password: z.string().min(1, 'Password is required'),
+  captchaAnswer: z.string().trim().regex(/^-?\d{1,3}$/, 'Enter the answer as a number'),
 });
 
 export default function Login() {
@@ -19,21 +21,27 @@ export default function Login() {
   const location = useLocation();
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState(null);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaKey, setCaptchaKey] = useState(0);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(schema), defaultValues: { email: '', password: '' } });
+  } = useForm({ resolver: zodResolver(schema), defaultValues: { email: '', password: '', captchaAnswer: '' } });
 
   const onSubmit = async (values) => {
     setServerError(null);
     try {
-      const { data } = await authApi.login(values);
+      const { data } = await authApi.login({ ...values, captchaToken });
       setSession(data);
       navigate(location.state?.from || '/', { replace: true });
     } catch (err) {
       setServerError(err.message);
+      // The token was spent by this attempt either way — fetch a fresh sum.
+      setValue('captchaAnswer', '');
+      setCaptchaKey((k) => k + 1);
     }
   };
 
@@ -56,6 +64,13 @@ export default function Login() {
           <Field label="Password" required error={errors.password?.message}>
             <Input type="password" autoComplete="current-password" placeholder="••••••••" {...register('password')} />
           </Field>
+
+          <CaptchaField
+            refreshKey={captchaKey}
+            onToken={setCaptchaToken}
+            answerProps={register('captchaAnswer')}
+            error={errors.captchaAnswer?.message}
+          />
 
           <Button type="submit" variant="gold" block icon={LogIn} loading={isSubmitting} style={{ marginTop: 6 }}>
             Sign in

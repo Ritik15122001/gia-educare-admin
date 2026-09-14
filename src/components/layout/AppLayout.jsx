@@ -7,7 +7,7 @@ import IconButton from '../ui/IconButton';
 import Toasts from '../ui/Toasts';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useUiStore, toast } from '../../store/uiStore';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore, useCan } from '../../store/authStore';
 import { authApi, enquiryApi } from '../../api';
 import { getResourceConfig } from '../../config/resources';
 
@@ -20,7 +20,7 @@ function useRouteLabel() {
   if (first === 'content') return { group: 'Content', label: getResourceConfig(second)?.label || second };
   if (first === 'enquiries') return { group: 'Leads', label: second ? 'Enquiry detail' : 'Enquiries' };
 
-  const LABELS = { sections: 'Section copy', media: 'Media', settings: 'Settings', users: 'Team accounts', profile: 'Your profile' };
+  const LABELS = { sections: 'Section copy', media: 'Media', settings: 'Settings', users: 'Team accounts', roles: 'Roles & permissions', profile: 'Your profile' };
   return { group: 'Site', label: LABELS[first] || first };
 }
 
@@ -32,12 +32,14 @@ export default function AppLayout() {
   const closeSidebar = useUiStore((s) => s.closeSidebar);
   const clearSession = useAuthStore((s) => s.clearSession);
   const route = useRouteLabel();
+  const canViewLeads = useCan('leads.view');
 
   // Badge for unactioned leads.
   const { data: newEnquiries } = useQuery({
     queryKey: ['enquiries', 'new-count'],
     queryFn: () => enquiryApi.list({ status: 'new', limit: 1 }),
     refetchInterval: 60_000,
+    enabled: canViewLeads,
   });
 
   useEffect(() => {

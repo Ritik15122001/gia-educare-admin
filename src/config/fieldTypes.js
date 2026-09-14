@@ -12,6 +12,7 @@ export const F = {
   EMOJI: 'emoji',
   GRADIENT: 'gradient',
   IMAGE: 'image',
+  DATE: 'date',
 };
 
 // Icon names the backend accepts for service/value cards.

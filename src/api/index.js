@@ -33,6 +33,8 @@ export const enquiryApi = {
   update: (id, payload) => api.patch(`/admin/enquiries/${id}`, payload),
   addNote: (id, body) => api.post(`/admin/enquiries/${id}/notes`, { body }),
   remove: (id) => api.delete(`/admin/enquiries/${id}`),
+  // Roles that can work leads and their active members — needs leads.assign.
+  assignees: () => api.get('/admin/enquiries/assignees'),
   exportUrl: (status) => `/admin/enquiries/export${status ? `?status=${status}` : ''}`,
 };
 
@@ -47,6 +49,13 @@ export const sectionApi = {
 export const settingsApi = {
   get: () => api.get('/admin/settings'),
   update: (payload) => api.patch('/admin/settings', payload),
+  emailStatus: () => api.get('/admin/settings/email'),
+  sendTestEmail: (to) => api.post('/admin/settings/email/test', { to }),
+};
+
+// Arithmetic image captcha — the answer is verified server-side.
+export const captchaApi = {
+  get: () => api.get('/captcha'),
 };
 
 export const userApi = {
@@ -54,6 +63,14 @@ export const userApi = {
   create: (payload) => api.post('/admin/users', payload),
   update: (id, payload) => api.patch(`/admin/users/${id}`, payload),
   remove: (id) => api.delete(`/admin/users/${id}`),
+};
+
+// Response meta carries the permission catalog (`permissionGroups`) for the editor.
+export const roleApi = {
+  list: () => api.get('/admin/roles'),
+  create: (payload) => api.post('/admin/roles', payload),
+  update: (id, payload) => api.patch(`/admin/roles/${id}`, payload),
+  remove: (id) => api.delete(`/admin/roles/${id}`),
 };
 
 export const mediaApi = {

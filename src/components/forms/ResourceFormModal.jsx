@@ -26,11 +26,16 @@ export default function ResourceFormModal({ config, open, record, onClose, onSub
     defaultValues: config.defaults,
   });
 
+  // `toForm` lets a resource reshape a stored row into what its inputs expect
+  // (e.g. an ISO timestamp down to the YYYY-MM-DD a date input needs).
+  const { defaults, toForm } = config;
+
   // Reload the form whenever a different record is opened.
   useEffect(() => {
     if (!open) return;
-    reset({ ...config.defaults, ...(record || {}) });
-  }, [open, record, config.defaults, reset]);
+    const row = record || {};
+    reset({ ...defaults, ...(toForm ? toForm(row) : row) });
+  }, [open, record, defaults, toForm, reset]);
 
   const published = watch('published');
 

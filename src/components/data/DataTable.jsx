@@ -57,6 +57,25 @@ function Cell({ column, row }) {
         </span>
       );
 
+    case 'date':
+      return value ? (
+        <span className="tiny">
+          {new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </span>
+      ) : (
+        <span className="muted">—</span>
+      );
+
+    case 'thumb':
+      return value ? (
+        <img className="thumb" src={value} alt="" style={{ width: 54, height: 36, borderRadius: 6 }} />
+      ) : (
+        <span
+          className="swatch"
+          style={{ display: 'inline-block', width: 54, height: 36, background: '#F1EFE9' }}
+        />
+      );
+
     case 'avatar':
       return (
         <span className="list-row" style={{ padding: 0, border: 0 }}>

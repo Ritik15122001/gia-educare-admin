@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Save, Plus, Trash2 } from 'lucide-react';
+import { Save, Plus, Trash2, Send } from 'lucide-react';
 import { settingsApi } from '../api';
 import { toast } from '../store/uiStore';
 import PageHeader from '../components/layout/PageHeader';
@@ -11,7 +11,8 @@ import { Card, CardHead } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import IconButton from '../components/ui/IconButton';
 import Spinner from '../components/ui/Spinner';
-import { Field, Input, Textarea } from '../components/forms/Field';
+import { Field, Input, Textarea, Switch } from '../components/forms/Field';
+import Badge from '../components/ui/Badge';
 import ImagePicker from '../components/forms/ImagePicker';
 import { Controller } from 'react-hook-form';
 
@@ -29,7 +30,15 @@ const schema = z.object({
   hours: z.string().trim().max(120).optional(),
   addressLine: z.string().trim().max(200).optional(),
   footerBlurb: z.string().trim().max(600).optional(),
-  notifyEnquiriesTo: emailOrEmpty.optional(),
+  notifyEnquiriesTo: z
+    .string()
+    .trim()
+    .max(500)
+    .refine(
+      (v) => !v || v.split(',').every((e) => z.string().email().safeParse(e.trim()).success),
+      'Use valid email addresses, separated by commas',
+    )
+    .optional(),
   offices: z
     .array(
       z.object({
@@ -50,7 +59,72 @@ const schema = z.object({
     title: z.string().trim().max(160).optional(),
     description: z.string().trim().max(320).optional(),
   }),
+  founder: z.object({
+    enabled: z.boolean(),
+    name: z.string().trim().max(120).optional(),
+    title: z.string().trim().max(120).optional(),
+    photoUrl: z.string().trim().max(500).optional(),
+    message: z.string().trim().max(1200).optional(),
+    email: emailOrEmpty.optional(),
+    phone: z.string().trim().max(30).optional(),
+    whatsapp: z.string().trim().max(30).optional(),
+    linkedin: z.string().trim().max(300).optional(),
+    instagram: z.string().trim().max(300).optional(),
+    youtube: z.string().trim().max(300).optional(),
+    twitter: z.string().trim().max(300).optional(),
+    facebook: z.string().trim().max(300).optional(),
+  }),
 });
+
+const FOUNDER_KEYS = ['name', 'title', 'photoUrl', 'message', 'email', 'phone', 'whatsapp', 'linkedin', 'instagram', 'youtube', 'twitter', 'facebook'];
+
+// SMTP status plus a real test send, so "is email working?" has a direct answer.
+function EmailCard({ defaultTo }) {
+  const [to, setTo] = useState('');
+  const { data: status } = useQuery({ queryKey: ['settings', 'email'], queryFn: settingsApi.emailStatus });
+  const test = useMutation({
+    mutationFn: (address) => settingsApi.sendTestEmail(address),
+    onSuccess: ({ data }) => toast(data.message),
+    onError: (err) => toast(err.message, 'err'),
+  });
+  const enabled = status?.data?.enabled;
+
+  return (
+    <Card>
+      <CardHead title="Email notifications" sub="New-lead alerts to your team and a confirmation to every student">
+        {status && (enabled ? <Badge tone="ok">Connected · {status.data.host}</Badge> : <Badge tone="warn">Not connected</Badge>)}
+      </CardHead>
+      <div className="card-pad">
+        {!enabled && status && (
+          <p className="tiny muted" style={{ marginBottom: 14 }}>
+            Emails are currently only logged by the server. To send them, set <code className="mono">SMTP_HOST</code>,{' '}
+            <code className="mono">SMTP_USER</code>, <code className="mono">SMTP_PASS</code> and{' '}
+            <code className="mono">EMAIL_FROM</code> in the backend environment (Gmail, Zoho, SES or SendGrid all work), then restart it.
+          </p>
+        )}
+        <p className="tiny muted" style={{ marginBottom: 14 }}>
+          Sent automatically: a new-lead alert to the addresses in <b>Notify enquiries to</b> above, a confirmation to the student,
+          and a welcome email when you add a team account.{enabled && ` Sending as ${status.data.from}.`}
+        </p>
+        <div className="row-gap" style={{ alignItems: 'flex-end' }}>
+          <Field label="Send a test email to">
+            <Input type="email" value={to} placeholder={defaultTo || 'you@giaeducare.com'} onChange={(e) => setTo(e.target.value)} />
+          </Field>
+          <Button
+            variant="primary"
+            icon={Send}
+            loading={test.isPending}
+            disabled={!enabled}
+            style={{ marginBottom: 16 }}
+            onClick={() => test.mutate(to.trim() || defaultTo)}
+          >
+            Send test
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -87,6 +161,10 @@ export default function Settings() {
       offices: (s.offices || []).map((o) => ({ name: o.name, address: o.address, phone: o.phone || '', hours: o.hours || '' })),
       socials: { instagram: '', linkedin: '', youtube: '', whatsapp: '', ...(s.socials || {}) },
       seo: { title: s.seo?.title || '', description: s.seo?.description || '' },
+      founder: {
+        enabled: s.founder?.enabled ?? true,
+        ...Object.fromEntries(FOUNDER_KEYS.map((k) => [k, s.founder?.[k] || ''])),
+      },
     });
   }, [data, reset]);
 
@@ -165,9 +243,9 @@ export default function Settings() {
                 label="Notify enquiries to"
                 full
                 error={errors.notifyEnquiriesTo?.message}
-                hint="Where new-lead notifications will be sent once email delivery is connected."
+                hint="Every new lead is emailed here. Separate several addresses with commas."
               >
-                <Input {...register('notifyEnquiriesTo')} placeholder="leads@giaeducare.com" />
+                <Input {...register('notifyEnquiriesTo')} placeholder="leads@giaeducare.com, counsellors@giaeducare.com" />
               </Field>
             </div>
           </div>
@@ -208,6 +286,55 @@ export default function Settings() {
                 </div>
               </div>
             ))}
+          </div>
+        </Card>
+
+        <EmailCard defaultTo={data?.data?.notifyEnquiriesTo?.split(',')[0]?.trim() || data?.data?.emailPrimary} />
+
+        <Card>
+          <CardHead title="Founder connect" sub="A personal note from the founder, with direct ways to reach them. Shown on the home and about pages.">
+            <Controller
+              control={control}
+              name="founder.enabled"
+              render={({ field }) => (
+                <Switch checked={field.value} onChange={field.onChange} label={field.value ? 'Shown on site' : 'Hidden'} />
+              )}
+            />
+          </CardHead>
+          <div className="card-pad">
+            <div className="form-grid">
+              <Field label="Name" error={errors.founder?.name?.message}>
+                <Input {...register('founder.name')} placeholder="Rhea Malhotra" />
+              </Field>
+              <Field label="Title" error={errors.founder?.title?.message}>
+                <Input {...register('founder.title')} placeholder="Founder & Lead Counsellor" />
+              </Field>
+              <Field label="Photo" full>
+                <Controller
+                  control={control}
+                  name="founder.photoUrl"
+                  render={({ field }) => <ImagePicker value={field.value} onChange={field.onChange} />}
+                />
+              </Field>
+              <Field label="Message" full error={errors.founder?.message?.message}>
+                <Textarea {...register('founder.message')} rows={4} />
+              </Field>
+              <Field label="Email" error={errors.founder?.email?.message}>
+                <Input {...register('founder.email')} placeholder="founder@giaeducare.com" />
+              </Field>
+              <Field label="Phone" error={errors.founder?.phone?.message}>
+                <Input {...register('founder.phone')} placeholder="+91 90000 00010" />
+              </Field>
+              <Field label="WhatsApp number" error={errors.founder?.whatsapp?.message} hint="With country code.">
+                <Input {...register('founder.whatsapp')} placeholder="+91 90000 00010" />
+              </Field>
+              {['linkedin', 'instagram', 'youtube', 'twitter', 'facebook'].map((key) => (
+                <Field key={key} label={key === 'twitter' ? 'X (Twitter)' : key.charAt(0).toUpperCase() + key.slice(1)} error={errors.founder?.[key]?.message}>
+                  <Input {...register(`founder.${key}`)} placeholder="https://…" />
+                </Field>
+              ))}
+            </div>
+            <p className="tiny muted">Leave any link blank to hide that button.</p>
           </div>
         </Card>
 

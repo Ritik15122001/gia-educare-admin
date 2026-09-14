@@ -67,7 +67,7 @@ export default function Profile() {
       <div className="stack">
         <Card>
           <CardHead title="Details">
-            <Badge tone="gold">{user?.role?.replace('_', ' ')}</Badge>
+            <Badge tone="gold">{user?.roleName || user?.role?.replace('_', ' ')}</Badge>
           </CardHead>
           <form className="card-pad" onSubmit={profileForm.handleSubmit((v) => saveProfile.mutate(v))}>
             <div className="form-grid">

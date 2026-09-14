@@ -17,6 +17,7 @@ const Sections = lazy(() => import('./pages/Sections'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Media = lazy(() => import('./pages/Media'));
 const Users = lazy(() => import('./pages/Users'));
+const Roles = lazy(() => import('./pages/Roles'));
 const Profile = lazy(() => import('./pages/Profile'));
 
 const queryClient = new QueryClient({
@@ -45,19 +46,29 @@ function Routing() {
           }
         >
           <Route index element={<Dashboard />} />
-          <Route path="content/:resource" element={<ResourceListPage />} />
-          <Route path="enquiries" element={<Enquiries />} />
-          <Route path="enquiries/:id" element={<EnquiryDetail />} />
-          <Route path="sections" element={<Sections />} />
-          <Route path="media" element={<Media />} />
           <Route path="profile" element={<Profile />} />
 
-          {/* Settings and team management are role-gated. */}
-          <Route element={<ProtectedRoute roles={['super_admin', 'admin']} />}>
+          {/* Each screen is gated by the same permission the API enforces. */}
+          <Route element={<ProtectedRoute permission="content.manage" />}>
+            <Route path="content/:resource" element={<ResourceListPage />} />
+          </Route>
+          <Route element={<ProtectedRoute permission="leads.view" />}>
+            <Route path="enquiries" element={<Enquiries />} />
+            <Route path="enquiries/:id" element={<EnquiryDetail />} />
+          </Route>
+          <Route element={<ProtectedRoute permission="sections.edit" />}>
+            <Route path="sections" element={<Sections />} />
+          </Route>
+          <Route element={<ProtectedRoute permission="media.upload" />}>
+            <Route path="media" element={<Media />} />
+          </Route>
+          <Route element={<ProtectedRoute permission="settings.manage" />}>
             <Route path="settings" element={<Settings />} />
           </Route>
+          {/* Team accounts and roles are never grantable — super admin only. */}
           <Route element={<ProtectedRoute roles={['super_admin']} />}>
             <Route path="users" element={<Users />} />
+            <Route path="roles" element={<Roles />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

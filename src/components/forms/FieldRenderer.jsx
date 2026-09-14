@@ -48,6 +48,14 @@ export default function FieldRenderer({ field, control, register, error }) {
     );
   }
 
+  if (field.type === F.DATE) {
+    return (
+      <Field {...common}>
+        <Input type="date" {...register(field.name)} />
+      </Field>
+    );
+  }
+
   if (field.type === F.TEXTAREA) {
     return (
       <Field {...common}>
@@ -64,11 +72,28 @@ export default function FieldRenderer({ field, control, register, error }) {
     );
   }
 
+  // Selects are controlled: options from another collection arrive after the
+  // form has been reset, and an uncontrolled <select> cannot hold a value that
+  // has no <option> yet — it would show the placeholder and save it back blank.
   if (field.type === F.SELECT) {
     return (
-      <Field {...common}>
-        <Select {...register(field.name)} options={options} placeholder={field.placeholder || 'Select…'} />
-      </Field>
+      <Controller
+        control={control}
+        name={field.name}
+        render={({ field: ctrl }) => (
+          <Field {...common}>
+            <Select
+              name={ctrl.name}
+              ref={ctrl.ref}
+              value={ctrl.value ?? ''}
+              onChange={(e) => ctrl.onChange(e.target.value)}
+              onBlur={ctrl.onBlur}
+              options={options}
+              placeholder={field.placeholder || 'Select…'}
+            />
+          </Field>
+        )}
+      />
     );
   }
 

@@ -4,10 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search, Download, Trash2, Inbox } from 'lucide-react';
 import { enquiryApi } from '../api';
 import { api } from '../api/client';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore, can } from '../store/authStore';
 import { useDebounced } from '../hooks/useDebounced';
 import { confirmDialog, toast } from '../store/uiStore';
-import { STATUS_OPTIONS, ENQUIRY_STATUSES } from '../utils/enquiryStatus';
+import { STATUS_OPTIONS, STATUS_TONE, ENQUIRY_STATUSES, BUDGET_RANGES } from '../utils/enquiryStatus';
 import { relativeTime } from '../utils/format';
 import PageHeader from '../components/layout/PageHeader';
 import { Card } from '../components/ui/Card';
@@ -17,19 +17,56 @@ import Badge from '../components/ui/Badge';
 import { Input, Select } from '../components/forms/Field';
 import EmptyState from '../components/ui/EmptyState';
 import Pagination from '../components/data/Pagination';
+import AssignSelect from '../components/forms/AssignSelect';
+import { toAssignValue, fromAssignValue } from '../utils/assign';
 import { cn } from '../utils/cn';
 
 export default function Enquiries() {
   const queryClient = useQueryClient();
-  const role = useAuthStore((s) => s.user?.role);
-  const canDelete = ['super_admin', 'admin'].includes(role);
+  const user = useAuthStore((s) => s.user);
+  const canDelete = can(user, 'leads.delete');
+  const canEdit = can(user, 'leads.edit');
+  const canAssign = can(user, 'leads.assign');
+  const canExport = can(user, 'leads.export');
+  const scopedToAssigned = user?.leadScope === 'assigned';
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [budget, setBudget] = useState('');
+  const [referral, setReferral] = useState('');
+  // '' | 'me' | 'none' | 'role:<key>'
+  const [assigned, setAssigned] = useState('');
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounced(search, 300);
 
-  const params = useMemo(() => ({ page, limit: 25, search: debouncedSearch, status }), [page, debouncedSearch, status]);
+  const params = useMemo(
+    () => ({
+      page,
+      limit: 25,
+      search: debouncedSearch,
+      status,
+      budget,
+      referral,
+      assignedTo: assigned === 'me' || assigned === 'none' ? assigned : '',
+      assignedRole: assigned.startsWith('role:') ? assigned.slice(5) : '',
+    }),
+    [page, debouncedSearch, status, budget, referral, assigned],
+  );
+
+  const { data: assigneeData } = useQuery({
+    queryKey: ['assignees'],
+    queryFn: enquiryApi.assignees,
+    enabled: canAssign,
+    staleTime: 60_000,
+  });
+  const assignees = assigneeData?.data || { roles: [], users: [] };
+
+  const assignedOptions = [
+    { value: 'me', label: 'Assigned to me' },
+    ...(canAssign
+      ? [{ value: 'none', label: 'Unassigned' }, ...assignees.roles.map((r) => ({ value: `role:${r.key}`, label: `Role: ${r.name}` }))]
+      : []),
+  ];
 
   const { data, isLoading } = useQuery({
     queryKey: ['enquiries', params],
@@ -44,6 +81,15 @@ export default function Enquiries() {
     onSuccess: () => {
       invalidate();
       toast('Status updated');
+    },
+    onError: (err) => toast(err.message, 'err'),
+  });
+
+  const assign = useMutation({
+    mutationFn: ({ id, value }) => enquiryApi.update(id, fromAssignValue(value)),
+    onSuccess: ({ data: e }) => {
+      invalidate();
+      toast(e.assignedRole ? `Assigned to ${[e.assignedRoleName, e.assignedTo?.name].filter(Boolean).join(' / ')}` : 'Unassigned');
     },
     onError: (err) => toast(err.message, 'err'),
   });
@@ -90,10 +136,20 @@ export default function Enquiries() {
 
   return (
     <>
-      <PageHeader crumb="Leads" title="Enquiries" sub="Every form submission from the website, newest first.">
-        <Button variant="ghost" icon={Download} onClick={handleExport}>
-          Export CSV
-        </Button>
+      <PageHeader
+        crumb="Leads"
+        title={scopedToAssigned ? 'My enquiries' : 'Enquiries'}
+        sub={
+          scopedToAssigned
+            ? `Leads assigned to you or to the ${user?.roleName || 'your'} role, newest first.`
+            : 'Every form submission from the website, newest first.'
+        }
+      >
+        {canExport && (
+          <Button variant="ghost" icon={Download} onClick={handleExport}>
+            Export CSV
+          </Button>
+        )}
       </PageHeader>
 
       {/* Status filter chips double as a pipeline summary */}
@@ -128,6 +184,27 @@ export default function Enquiries() {
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
+          <Select
+            style={{ maxWidth: 180 }}
+            placeholder="Any budget"
+            value={budget}
+            options={BUDGET_RANGES}
+            onChange={(e) => { setBudget(e.target.value); setPage(1); }}
+          />
+          <Select
+            style={{ maxWidth: 170 }}
+            placeholder="All sources"
+            value={referral}
+            options={[{ value: 'any', label: 'Referred leads only' }]}
+            onChange={(e) => { setReferral(e.target.value); setPage(1); }}
+          />
+          <Select
+            style={{ maxWidth: 190 }}
+            placeholder={canAssign ? 'Any assignment' : 'All my leads'}
+            value={assigned}
+            options={assignedOptions}
+            onChange={(e) => { setAssigned(e.target.value); setPage(1); }}
+          />
           <span className="tiny muted" style={{ marginLeft: 'auto' }}>{meta?.total ?? 0} enquiry(s)</span>
         </div>
 
@@ -140,11 +217,13 @@ export default function Enquiries() {
         ) : !rows.length ? (
           <EmptyState
             icon={Inbox}
-            title={search || status ? 'No matching enquiries' : 'No enquiries yet'}
+            title={search || status || budget || referral || assigned ? 'No matching enquiries' : scopedToAssigned ? 'Nothing assigned to you yet' : 'No enquiries yet'}
             message={
-              search || status
-                ? 'Try a different search or clear the status filter.'
-                : 'Leads submitted through the website form will appear here automatically.'
+              search || status || budget || referral || assigned
+                ? 'Try a different search or clear the filters.'
+                : scopedToAssigned
+                  ? 'When a lead is assigned to you or your role, it shows up here.'
+                  : 'Leads submitted through the website form will appear here automatically.'
             }
           />
         ) : (
@@ -155,7 +234,9 @@ export default function Enquiries() {
                   <th>Student</th>
                   <th style={{ width: 190 }}>Contact</th>
                   <th style={{ width: 130 }}>Destination</th>
-                  <th style={{ width: 110 }}>Intake</th>
+                  <th style={{ width: 130 }}>Budget</th>
+                  <th style={{ width: 150 }}>Referral</th>
+                  <th style={{ width: 190 }}>Assigned to</th>
                   <th style={{ width: 150 }}>Status</th>
                   <th style={{ width: 100 }}>Received</th>
                   <th style={{ width: 80 }} aria-label="Actions" />
@@ -175,14 +256,46 @@ export default function Enquiries() {
                       <div className="tiny muted">{row.code} {row.phone}</div>
                     </td>
                     <td>{row.destination ? <Badge tone="gold">{row.destination}</Badge> : <span className="muted">—</span>}</td>
-                    <td className="tiny">{row.intake || '—'}</td>
+                    <td className="tiny">{row.budget || <span className="muted">—</span>}</td>
                     <td>
-                      <Select
-                        style={{ padding: '5px 28px 5px 9px', fontSize: '.78rem' }}
-                        value={row.status}
-                        options={STATUS_OPTIONS}
-                        onChange={(e) => updateStatus.mutate({ id: row.id, value: e.target.value })}
-                      />
+                      {row.referral ? (
+                        <Badge tone="info">{row.referral}</Badge>
+                      ) : row.utmSource ? (
+                        <span className="tiny muted">{row.utmSource}</span>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
+                    <td>
+                      {canAssign ? (
+                        <AssignSelect
+                          style={{ padding: '5px 28px 5px 9px', fontSize: '.78rem' }}
+                          roles={assignees.roles}
+                          users={assignees.users}
+                          value={toAssignValue(row)}
+                          currentLabel={[row.assignedRoleName, row.assignedTo?.name].filter(Boolean).join(' / ')}
+                          onChange={(value) => assign.mutate({ id: row.id, value })}
+                        />
+                      ) : row.assignedRole ? (
+                        <>
+                          <div className="tiny" style={{ fontWeight: 700 }}>{row.assignedTo?.name || 'Whole team'}</div>
+                          <div className="tiny muted">{row.assignedRoleName || row.assignedRole}</div>
+                        </>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
+                    <td>
+                      {canEdit ? (
+                        <Select
+                          style={{ padding: '5px 28px 5px 9px', fontSize: '.78rem' }}
+                          value={row.status}
+                          options={STATUS_OPTIONS}
+                          onChange={(e) => updateStatus.mutate({ id: row.id, value: e.target.value })}
+                        />
+                      ) : (
+                        <Badge tone={STATUS_TONE[row.status]}>{row.status}</Badge>
+                      )}
                     </td>
                     <td className="tiny muted">{relativeTime(row.createdAt)}</td>
                     <td className="actions">

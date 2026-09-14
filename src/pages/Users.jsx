@@ -3,8 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Users2 } from 'lucide-react';
-import { userApi } from '../api';
+import { Link } from 'react-router-dom';
+import { Plus, Pencil, Trash2, Users2, ShieldCheck } from 'lucide-react';
+import { userApi, roleApi } from '../api';
 import { useAuthStore } from '../store/authStore';
 import { confirmDialog, toast } from '../store/uiStore';
 import { relativeTime, initialsOf } from '../utils/format';
@@ -17,13 +18,7 @@ import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import { Field, Input, Select, Switch } from '../components/forms/Field';
 
-const ROLES = [
-  { value: 'editor', label: 'Editor — content only' },
-  { value: 'admin', label: 'Admin — content, leads, settings' },
-  { value: 'super_admin', label: 'Super admin — everything incl. team' },
-];
-
-const ROLE_TONE = { super_admin: 'gold', admin: 'info', editor: 'neutral' };
+const ROLE_TONE = { super_admin: 'gold', admin: 'info' };
 
 const makeSchema = (isEdit) =>
   z.object({
@@ -32,11 +27,11 @@ const makeSchema = (isEdit) =>
     password: isEdit
       ? z.string().min(8, 'Must be at least 8 characters').or(z.literal('')).optional()
       : z.string().min(8, 'Must be at least 8 characters'),
-    role: z.enum(['super_admin', 'admin', 'editor']),
+    role: z.string().min(1, 'Choose a role'),
     active: z.boolean(),
   });
 
-function UserModal({ open, record, onClose, onSubmit, saving }) {
+function UserModal({ open, record, roleOptions, onClose, onSubmit, saving }) {
   const isEdit = Boolean(record?.id);
   const {
     register,
@@ -88,8 +83,11 @@ function UserModal({ open, record, onClose, onSubmit, saving }) {
         <Input type="password" autoComplete="new-password" {...register('password')} />
       </Field>
       <Field label="Role" required error={errors.role?.message}>
-        <Select {...register('role')} options={ROLES} />
+        <Select {...register('role')} options={roleOptions} />
       </Field>
+      <p className="tiny muted">
+        What each role can do is set in <Link to="/roles" style={{ textDecoration: 'underline' }}>Roles &amp; permissions</Link>.
+      </p>
     </Modal>
   );
 }
@@ -100,11 +98,15 @@ export default function Users() {
   const [editing, setEditing] = useState(null);
 
   const { data, isLoading } = useQuery({ queryKey: ['users'], queryFn: () => userApi.list({ limit: 100 }) });
+  const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: roleApi.list });
+  const roles = rolesData?.data || [];
+  const roleName = Object.fromEntries(roles.map((r) => [r.key, r.name]));
+  const roleOptions = roles.map((r) => ({ value: r.key, label: r.description ? `${r.name} — ${r.description}` : r.name }));
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['users'] });
 
   const create = useMutation({
     mutationFn: (payload) => userApi.create(payload),
-    onSuccess: () => { invalidate(); setEditing(null); toast('Account created'); },
+    onSuccess: () => { invalidate(); setEditing(null); toast('Account created — a welcome email is on its way (share the password separately)'); },
     onError: (err) => toast(err.message, 'err'),
   });
 
@@ -142,6 +144,9 @@ export default function Users() {
   return (
     <div className="content-narrow">
       <PageHeader crumb="Site" title="Team accounts" sub="Who can sign in here, and what they are allowed to change.">
+        <Link to="/roles">
+          <Button variant="ghost" icon={ShieldCheck}>Roles &amp; permissions</Button>
+        </Link>
         <Button variant="gold" icon={Plus} onClick={() => setEditing({})}>
           Invite member
         </Button>
@@ -184,7 +189,7 @@ export default function Users() {
                       </div>
                     </td>
                     <td>
-                      <Badge tone={ROLE_TONE[u.role]}>{u.role.replace('_', ' ')}</Badge>
+                      <Badge tone={ROLE_TONE[u.role] || 'neutral'}>{roleName[u.role] || u.role.replace('_', ' ')}</Badge>
                     </td>
                     <td>{u.active ? <Badge tone="ok">Active</Badge> : <Badge tone="err">Disabled</Badge>}</td>
                     <td className="tiny muted">{u.lastLoginAt ? relativeTime(u.lastLoginAt) : 'Never'}</td>
@@ -207,6 +212,7 @@ export default function Users() {
       <UserModal
         open={Boolean(editing)}
         record={editing?.id ? editing : null}
+        roleOptions={roleOptions}
         onClose={() => setEditing(null)}
         onSubmit={handleSubmit}
         saving={create.isPending || update.isPending}
