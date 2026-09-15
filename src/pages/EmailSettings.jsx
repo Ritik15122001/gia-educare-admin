@@ -403,7 +403,7 @@ export default function EmailSettings() {
                 <Input type="email" {...register('fromEmail')} placeholder="noreply@giaeducare.com" />
               </Field>
               <Field label="Reply-to email" full error={errors.replyTo?.message} hint="Optional. Team alerts always reply to the student directly.">
-                <Input type="email" {...register('replyTo')} placeholder="admissions@giaeducare.com" />
+                <Input type="email" {...register('replyTo')} placeholder="info@giaeducare.com" />
               </Field>
             </div>
           </div>

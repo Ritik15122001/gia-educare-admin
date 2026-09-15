@@ -50,7 +50,15 @@ const schema = z.object({
       }),
     )
     .optional(),
+  legalEntity: z.string().trim().max(160).optional(),
+  legalLinks: z.object({
+    privacy: z.string().trim().max(500).refine((v) => !v || /^https?:\/\//i.test(v), 'Use a full https:// link').optional(),
+    terms: z.string().trim().max(500).refine((v) => !v || /^https?:\/\//i.test(v), 'Use a full https:// link').optional(),
+    refund: z.string().trim().max(500).refine((v) => !v || /^https?:\/\//i.test(v), 'Use a full https:// link').optional(),
+  }),
+  mapUrl: z.string().trim().max(500).refine((v) => !v || /^https?:\/\//i.test(v), 'Use a full https:// link').optional(),
   socials: z.object({
+    facebook: z.string().trim().max(300).optional(),
     instagram: z.string().trim().max(300).optional(),
     linkedin: z.string().trim().max(300).optional(),
     youtube: z.string().trim().max(300).optional(),
@@ -113,7 +121,10 @@ export default function Settings() {
       footerBlurb: s.footerBlurb || '',
       notifyEnquiriesTo: s.notifyEnquiriesTo || '',
       offices: (s.offices || []).map((o) => ({ name: o.name, address: o.address, phone: o.phone || '', hours: o.hours || '' })),
-      socials: { instagram: '', linkedin: '', youtube: '', whatsapp: '', ...(s.socials || {}) },
+      socials: { facebook: '', instagram: '', linkedin: '', youtube: '', whatsapp: '', ...(s.socials || {}) },
+      legalEntity: s.legalEntity || '',
+      legalLinks: { privacy: s.legalLinks?.privacy || '', terms: s.legalLinks?.terms || '', refund: s.legalLinks?.refund || '' },
+      mapUrl: s.mapUrl || '',
       seo: { title: s.seo?.title || '', description: s.seo?.description || '' },
       founder: {
         enabled: s.founder?.enabled ?? true,
@@ -218,7 +229,7 @@ export default function Settings() {
                 </div>
                 <div className="form-grid">
                   <Field label="Name" required error={errors.offices?.[i]?.name?.message}>
-                    <Input {...register(`offices.${i}.name`)} placeholder="Gurugram · Head office" />
+                    <Input {...register(`offices.${i}.name`)} placeholder="Noida · Head office" />
                   </Field>
                   <Field label="Phone" error={errors.offices?.[i]?.phone?.message}>
                     <Input {...register(`offices.${i}.phone`)} />
@@ -274,13 +285,13 @@ export default function Settings() {
                 <Textarea {...register('founder.message')} rows={4} />
               </Field>
               <Field label="Email" error={errors.founder?.email?.message}>
-                <Input {...register('founder.email')} placeholder="founder@giaeducare.com" />
+                <Input {...register('founder.email')} placeholder="info@giaeducare.com" />
               </Field>
               <Field label="Phone" error={errors.founder?.phone?.message}>
-                <Input {...register('founder.phone')} placeholder="+91 90000 00010" />
+                <Input {...register('founder.phone')} placeholder="+91 99534 14741" />
               </Field>
               <Field label="WhatsApp number" error={errors.founder?.whatsapp?.message} hint="With country code.">
-                <Input {...register('founder.whatsapp')} placeholder="+91 90000 00010" />
+                <Input {...register('founder.whatsapp')} placeholder="+91 99534 14741" />
               </Field>
               {['linkedin', 'instagram', 'youtube', 'twitter', 'facebook'].map((key) => (
                 <Field key={key} label={key === 'twitter' ? 'X (Twitter)' : key.charAt(0).toUpperCase() + key.slice(1)} error={errors.founder?.[key]?.message}>
@@ -296,11 +307,38 @@ export default function Settings() {
           <CardHead title="Social links" sub="Leave blank to hide the icon in the footer" />
           <div className="card-pad">
             <div className="form-grid">
-              {['instagram', 'linkedin', 'youtube', 'whatsapp'].map((key) => (
-                <Field key={key} label={key.charAt(0).toUpperCase() + key.slice(1)}>
+              {['facebook', 'instagram', 'linkedin', 'youtube', 'whatsapp'].map((key) => (
+                <Field
+                  key={key}
+                  label={key === 'whatsapp' ? 'WhatsApp link' : key.charAt(0).toUpperCase() + key.slice(1)}
+                  hint={key === 'whatsapp' ? 'e.g. https://wa.me/919953414741 — also powers the floating WhatsApp button on every page.' : undefined}
+                >
                   <Input {...register(`socials.${key}`)} placeholder="https://…" />
                 </Field>
               ))}
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <CardHead title="Legal & location" sub="The footer's legal line and policy links, and the map on the contact page" />
+          <div className="card-pad">
+            <div className="form-grid">
+              <Field label="Legal entity line" full error={errors.legalEntity?.message} hint="Shown in the footer after the brand name: © 2026 GIA Educare | …">
+                <Input {...register('legalEntity')} placeholder="A Study Abroad Unit of HolidayAlong Hospitality LLP" />
+              </Field>
+              <Field label="Privacy policy link" error={errors.legalLinks?.privacy?.message}>
+                <Input {...register('legalLinks.privacy')} placeholder="https://giaeducare.com/privacy-policy" />
+              </Field>
+              <Field label="Terms of service link" error={errors.legalLinks?.terms?.message}>
+                <Input {...register('legalLinks.terms')} placeholder="https://giaeducare.com/terms-of-service" />
+              </Field>
+              <Field label="Refund policy link" error={errors.legalLinks?.refund?.message}>
+                <Input {...register('legalLinks.refund')} placeholder="https://giaeducare.com/refund-policy" />
+              </Field>
+              <Field label="Google Maps link" error={errors.mapUrl?.message} hint="Paste a link like https://maps.google.com/?q=28.580475,77.320351 — it's embedded on the contact page.">
+                <Input {...register('mapUrl')} placeholder="https://maps.google.com/?q=…" />
+              </Field>
             </div>
           </div>
         </Card>

@@ -216,8 +216,8 @@ export const RESOURCES = {
       { name: 'specialisation', label: 'Specialisation', type: F.TEXT, full: true, placeholder: 'USA & Canada · masters and funding' },
       { name: 'experienceYears', label: 'Years of experience', type: F.NUMBER, placeholder: '12' },
       { name: 'studentsCounselled', label: 'Students counselled', type: F.NUMBER, placeholder: '3200' },
-      { name: 'phone', label: 'Call number', type: F.TEXT, placeholder: '+91 90000 00010', hint: 'Powers the Call button.' },
-      { name: 'whatsapp', label: 'WhatsApp number', type: F.TEXT, placeholder: '+91 90000 00010', hint: 'With country code. Powers the WhatsApp button.' },
+      { name: 'phone', label: 'Call number', type: F.TEXT, placeholder: '+91 99534 14741', hint: 'Powers the Call button.' },
+      { name: 'whatsapp', label: 'WhatsApp number', type: F.TEXT, placeholder: '+91 99534 14741', hint: 'With country code. Powers the WhatsApp button.' },
       { name: 'languages', label: 'Languages', type: F.TAGS, full: true },
     ],
     defaults: {
