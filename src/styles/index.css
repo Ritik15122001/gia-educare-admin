@@ -381,3 +381,49 @@ tr.drop-target td{box-shadow:inset 0 2px 0 var(--gold);}
 .perm-extras{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;}
 .perm-extras .checkbox-row{font-size:.76rem;color:var(--muted);}
 .perm-note{display:block;font-size:.72rem;color:var(--muted-2);margin-top:4px;}
+
+/* ---------- finance: expenses & P&L ---------- */
+.fin-pos{color:var(--ok);}
+.fin-neg{color:var(--err);}
+.fin-amt{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;}
+.fin-clip{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fin-toolbar-totals{margin-left:auto;white-space:nowrap;}
+.stat-card .ico.fin-ico-in{background:var(--ok-soft);color:var(--ok);}
+.stat-card .ico.fin-ico-out,.stat-card .ico.fin-ico-loss{background:var(--err-soft);color:var(--err);}
+.stat-card .value.fin-neg{color:var(--err);}
+
+.fin-tabs{border-bottom:1px solid var(--line);gap:4px;}
+.fin-tab{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;margin-bottom:-1px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer;}
+.fin-tab:hover{color:var(--ink);}
+.fin-tab.active{color:var(--ink);border-bottom-color:var(--gold);}
+
+.fin-type{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.fin-type-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--paper);font:inherit;text-align:left;cursor:pointer;color:var(--muted);}
+.fin-type-opt b{display:block;font-size:.9rem;color:var(--ink);}
+.fin-type-opt small{font-size:.74rem;}
+.fin-type-opt.is-expense.active{border-color:var(--err);background:var(--err-soft);color:var(--err);}
+.fin-type-opt.is-income.active{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);}
+
+.pl-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+.pl-table td{padding:7px 20px;border-bottom:1px solid var(--line-2);}
+.pl-table .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.pl-head td{font-weight:700;color:var(--ink);padding-top:14px;}
+.pl-cat td{color:var(--ink-3);font-size:.8rem;border-bottom-style:dashed;}
+.pl-cat td:first-child{padding-left:36px;}
+.pl-profit td{background:var(--cream);font-weight:700;color:var(--ink);border-top:1px solid var(--line);}
+.pl-net td{font-family:"Poppins",sans-serif;font-size:1rem;padding-block:12px;border-bottom:0;}
+.pl-margin{display:inline-block;margin-left:10px;font-family:inherit;font-size:.72rem;font-weight:600;color:var(--muted);}
+.pl-excluded{border-top:1px solid var(--line);padding-bottom:14px;}
+.pl-excluded p{padding:6px 20px 0;}
+
+.fin-bars{display:grid;gap:3px;margin-top:6px;max-width:180px;}
+.fin-bars span{display:block;height:4px;border-radius:4px;min-width:2px;}
+.fin-bars .in{background:var(--ok);opacity:.7;}
+.fin-bars .out{background:var(--err);opacity:.6;}
+
+.fin-formula{margin:14px 0 0;padding-left:20px;display:grid;gap:5px;font-size:.85rem;color:var(--ink-3);}
+.fin-guide{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
+.fin-guide-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 16px;}
+.fin-guide-card b{font-size:.9rem;color:var(--ink);}
+.fin-guide-card p{font-size:.8rem;color:var(--ink-3);margin-top:8px;line-height:1.5;}
+.fin-rules{padding-left:18px;display:grid;gap:8px;font-size:.84rem;color:var(--ink-3);line-height:1.5;}

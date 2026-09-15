@@ -19,6 +19,7 @@ function useRouteLabel() {
   if (!first) return { group: null, label: 'Dashboard' };
   if (first === 'content') return { group: 'Content', label: getResourceConfig(second)?.label || second };
   if (first === 'enquiries') return { group: 'Leads', label: second ? 'Enquiry detail' : 'Enquiries' };
+  if (first === 'finance') return { group: 'Finance', label: 'Expenses & P&L' };
   if (first === 'settings' && second === 'email') return { group: 'Site', label: 'Email & SMTP' };
 
   const LABELS = { sections: 'Section copy', media: 'Media', settings: 'Settings', users: 'Team accounts', roles: 'Roles & permissions', profile: 'Your profile' };

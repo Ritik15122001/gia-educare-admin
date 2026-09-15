@@ -38,6 +38,24 @@ export const enquiryApi = {
   exportUrl: (status) => `/admin/enquiries/export${status ? `?status=${status}` : ''}`,
 };
 
+// --- finance ----------------------------------------------------------------
+// Income & expense entries, each hand-tagged to a P&L head.
+const financeQs = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v !== '' && v !== undefined && v !== null),
+  ).toString();
+  return qs ? `?${qs}` : '';
+};
+export const financeApi = {
+  options: () => api.get('/admin/finance/options'),
+  list: (params) => api.get(`/admin/finance/entries${financeQs(params)}`),
+  summary: (params) => api.get(`/admin/finance/summary${financeQs(params)}`),
+  create: (payload) => api.post('/admin/finance/entries', payload),
+  update: (id, payload) => api.patch(`/admin/finance/entries/${id}`, payload),
+  remove: (id) => api.delete(`/admin/finance/entries/${id}`),
+  exportUrl: (params) => `/admin/finance/export${financeQs(params)}`,
+};
+
 // --- sections, settings, users, media, dashboard --------------------------
 export const sectionApi = {
   list: () => api.get('/admin/sections'),

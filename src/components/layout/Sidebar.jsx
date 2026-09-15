@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Inbox, Settings, Users2, Image, FileText, LogOut, ExternalLink, ShieldCheck, Mail,
+  LayoutDashboard, Inbox, Settings, Users2, Image, FileText, LogOut, ExternalLink, ShieldCheck, Mail, Wallet,
 } from 'lucide-react';
 import { RESOURCE_LIST } from '../../config/resources';
 import { useAuthStore, can, canModule } from '../../store/authStore';
@@ -46,6 +46,8 @@ export default function Sidebar({ enquiryCount, onLogout }) {
           Inbox,
           enquiryCount > 0 ? <span className="count">{enquiryCount}</span> : null,
         )}
+
+        {canModule(user, 'finance') && item('/finance', 'Expenses & P&L', Wallet)}
 
         {visibleResources.length > 0 && (
           <>

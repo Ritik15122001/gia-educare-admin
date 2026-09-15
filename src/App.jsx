@@ -20,6 +20,7 @@ const Media = lazy(() => import('./pages/Media'));
 const Users = lazy(() => import('./pages/Users'));
 const Roles = lazy(() => import('./pages/Roles'));
 const Profile = lazy(() => import('./pages/Profile'));
+const Finance = lazy(() => import('./pages/Finance'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +56,9 @@ function Routing() {
           <Route element={<ProtectedRoute permission="leads.view" />}>
             <Route path="enquiries" element={<Enquiries />} />
             <Route path="enquiries/:id" element={<EnquiryDetail />} />
+          </Route>
+          <Route element={<ProtectedRoute permission={['finance.view', 'finance.edit']} />}>
+            <Route path="finance" element={<Finance />} />
           </Route>
           <Route element={<ProtectedRoute permission={['sections.view', 'sections.edit']} />}>
             <Route path="sections" element={<Sections />} />
