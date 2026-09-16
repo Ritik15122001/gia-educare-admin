@@ -427,3 +427,18 @@ tr.drop-target td{box-shadow:inset 0 2px 0 var(--gold);}
 .fin-guide-card b{font-size:.9rem;color:var(--ink);}
 .fin-guide-card p{font-size:.8rem;color:var(--ink-3);margin-top:8px;line-height:1.5;}
 .fin-rules{padding-left:18px;display:grid;gap:8px;font-size:.84rem;color:var(--ink-3);line-height:1.5;}
+
+/* ---------- sidebar scroll affordance ----------
+   The nav is taller than most screens, and with no visible scrollbar the
+   modules below the fold read as missing. Show a slim scrollbar and fade
+   the list into the footer so there is an obvious "more below". */
+.sidebar-nav{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.3) transparent;overscroll-behavior:contain;}
+.sidebar-nav::-webkit-scrollbar{width:9px;}
+.sidebar-nav::-webkit-scrollbar-track{background:transparent;}
+.sidebar-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border:3px solid transparent;background-clip:content-box;border-radius:99px;}
+.sidebar-nav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.42);background-clip:content-box;}
+.sidebar-foot{position:relative;}
+.sidebar-foot::before{
+  content:"";position:absolute;left:0;right:0;top:-30px;height:30px;pointer-events:none;
+  background:linear-gradient(rgba(8,25,47,0),var(--ink));
+}
