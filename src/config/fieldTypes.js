@@ -15,11 +15,8 @@ export const F = {
   DATE: 'date',
 };
 
-// Icon names the backend accepts for service/value cards.
-export const ICON_OPTIONS = [
-  'target', 'search', 'document', 'shield-check', 'briefcase', 'coins',
-  'cap', 'shield', 'clock', 'home', 'users', 'phone', 'mail', 'pin',
-];
+// Re-exported from the shared catalogue so there is one list to maintain.
+export { ICON_OPTIONS } from './iconCatalogue';
 
 // Ready-made gradients matching the site's destination cards.
 export const GRADIENT_PRESETS = [

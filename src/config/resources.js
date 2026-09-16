@@ -37,7 +37,7 @@ export const RESOURCES = {
     ],
     fields: [
       { name: 'name', label: 'Country name', type: F.TEXT, required: true, placeholder: 'United States' },
-      { name: 'flag', label: 'Flag emoji', type: F.EMOJI, placeholder: '🇺🇸' },
+      { name: 'flag', label: 'Flag emoji', type: F.EMOJI, emojiSet: 'flags', placeholder: '🇺🇸' },
       { name: 'tag', label: 'Card badge', type: F.TEXT, placeholder: 'STEM OPT 3 yrs', hint: 'Short label on the home-page card.' },
       { name: 'imageUrl', label: 'Card photo', type: F.IMAGE, full: true, hint: 'Landscape photo for the top half of the country card (at least 960px wide).' },
       { name: 'bg', label: 'Fallback gradient', type: F.GRADIENT, full: true, hint: 'Shown only while no photo is set.' },
@@ -89,7 +89,7 @@ export const RESOURCES = {
     fields: [
       { name: 'title', label: 'Program title', type: F.TEXT, required: true, full: true, placeholder: 'MS Data Science & Analytics' },
       { name: 'category', label: 'Field of study', type: F.SELECT, required: true, optionsFrom: 'course-categories', valueKey: 'key', labelKey: 'label' },
-      { name: 'icon', label: 'Icon emoji', type: F.EMOJI, placeholder: '📊' },
+      { name: 'icon', label: 'Icon emoji', type: F.EMOJI, emojiSet: 'symbols', placeholder: '📊' },
       { name: 'badge', label: 'Badge', type: F.TEXT, placeholder: 'Highest demand' },
       { name: 'level', label: 'Level', type: F.TEXT, placeholder: 'Masters' },
       { name: 'duration', label: 'Duration', type: F.TEXT, placeholder: '12 – 24 months' },

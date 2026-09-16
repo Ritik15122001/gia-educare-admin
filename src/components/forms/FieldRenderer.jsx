@@ -8,6 +8,7 @@ import PairsInput from './PairsInput';
 import IconPicker from './IconPicker';
 import GradientPicker from './GradientPicker';
 import ImagePicker from './ImagePicker';
+import EmojiPicker from './EmojiPicker';
 
 // Options can be declared inline or pulled from another collection
 // (e.g. a course's category list comes from `course-categories`).
@@ -64,13 +65,6 @@ export default function FieldRenderer({ field, control, register, error }) {
     );
   }
 
-  if (field.type === F.EMOJI) {
-    return (
-      <Field {...common}>
-        <Input {...register(field.name)} placeholder={field.placeholder} style={{ fontSize: '1.15rem' }} />
-      </Field>
-    );
-  }
 
   // Selects are controlled: options from another collection arrive after the
   // form has been reset, and an uncontrolled <select> cannot hold a value that
@@ -107,9 +101,12 @@ export default function FieldRenderer({ field, control, register, error }) {
           {field.type === F.SWITCH && <Switch checked={ctrl.value} onChange={ctrl.onChange} label={field.switchLabel} />}
           {field.type === F.TAGS && <TagsInput value={ctrl.value} onChange={ctrl.onChange} />}
           {field.type === F.PAIRS && <PairsInput value={ctrl.value} onChange={ctrl.onChange} />}
-          {field.type === F.ICON && <IconPicker value={ctrl.value} onChange={ctrl.onChange} options={field.options} />}
+          {field.type === F.ICON && <IconPicker value={ctrl.value} onChange={ctrl.onChange} />}
           {field.type === F.GRADIENT && <GradientPicker value={ctrl.value} onChange={ctrl.onChange} />}
           {field.type === F.IMAGE && <ImagePicker value={ctrl.value} onChange={ctrl.onChange} />}
+          {field.type === F.EMOJI && (
+            <EmojiPicker value={ctrl.value} onChange={ctrl.onChange} set={field.emojiSet || 'flags'} />
+          )}
         </Field>
       )}
     />
