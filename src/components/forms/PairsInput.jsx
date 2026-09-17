@@ -4,7 +4,7 @@ import Button from '../ui/Button';
 import IconButton from '../ui/IconButton';
 
 // Repeater for label/value rows, e.g. a destination's fact table.
-export default function PairsInput({ value = [], onChange, labelPlaceholder = 'Label', valuePlaceholder = 'Value' }) {
+export default function PairsInput({ value = [], onChange, labelPlaceholder = 'Label', valuePlaceholder = 'Value', multiline = false }) {
   const rows = Array.isArray(value) ? value : [];
 
   const update = (index, patch) => onChange(rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
@@ -25,12 +25,23 @@ export default function PairsInput({ value = [], onChange, labelPlaceholder = 'L
               onChange={(e) => update(i, { label: e.target.value })}
               style={{ flex: '0 0 40%' }}
             />
-            <Input
-              value={row.value || ''}
-              placeholder={valuePlaceholder}
-              onChange={(e) => update(i, { value: e.target.value })}
-              style={{ flex: 1 }}
-            />
+            {multiline ? (
+              <textarea
+                className="textarea"
+                rows={2}
+                value={row.value || ''}
+                placeholder={valuePlaceholder}
+                onChange={(e) => update(i, { value: e.target.value })}
+                style={{ flex: 1, minHeight: 58 }}
+              />
+            ) : (
+              <Input
+                value={row.value || ''}
+                placeholder={valuePlaceholder}
+                onChange={(e) => update(i, { value: e.target.value })}
+                style={{ flex: 1 }}
+              />
+            )}
             <IconButton icon={Trash2} label="Remove row" onClick={() => remove(i)} />
           </div>
         ))}

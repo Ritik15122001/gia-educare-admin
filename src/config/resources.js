@@ -9,6 +9,12 @@ const req = (label, min = 2) => z.string().trim().min(min, `${label} is required
 const opt = (max = 500) => z.string().trim().max(max).optional().or(z.literal(''));
 
 // Shared tail on every content form.
+const pairOf = (labelMax, valueMax) =>
+  z.object({
+    label: z.string().trim().min(1, 'Required').max(labelMax),
+    value: z.string().trim().min(1, 'Required').max(valueMax),
+  });
+
 const base = { order: z.coerce.number().int().min(0).optional(), published: z.boolean().optional() };
 
 /**
@@ -96,17 +102,39 @@ export const RESOURCES = {
       { name: 'tuition', label: 'Tuition / year', type: F.TEXT, placeholder: '₹17 – 46 Lakh', hint: 'In INR.' },
       { name: 'topPicks', label: 'Top picks', type: F.TEXT, placeholder: 'USA · Canada · UK' },
       { name: 'note', label: 'Footnote', type: F.TEXT, placeholder: 'GRE optional at most campuses' },
-      { name: 'description', label: 'Description', type: F.TEXTAREA, full: true },
+      { name: 'description', label: 'Description', type: F.TEXTAREA, full: true, hint: 'The short summary shown on the course card.' },
+
+      // ---- detail page ----
+      { name: 'imageUrl', label: 'Banner image', type: F.IMAGE, full: true, hint: 'Shown at the top of the course detail page.' },
+      { name: 'overview', label: 'Overview', type: F.TEXTAREA, full: true, rows: 6, hint: 'The long description on the detail page. Leave blank to reuse the short description.' },
+      { name: 'highlights', label: 'Highlights', type: F.TAGS, full: true, hint: 'Short selling points, e.g. "STEM designated", "No GRE required".' },
+      { name: 'curriculum', label: 'What you will study', type: F.PAIRS, full: true, multiline: true, labelPlaceholder: 'Module', valuePlaceholder: 'What it covers' },
+      { name: 'eligibility', label: 'Eligibility', type: F.TAGS, full: true, hint: 'One requirement per entry, e.g. "Bachelors with 60%+".' },
+      { name: 'careerOutcomes', label: 'Career outcomes', type: F.TAGS, full: true, hint: 'Job titles graduates move into.' },
+      { name: 'universities', label: 'Partner universities', type: F.TAGS, full: true },
+      { name: 'feeBreakdown', label: 'Fees & funding', type: F.PAIRS, full: true, labelPlaceholder: 'Item', valuePlaceholder: 'Amount' },
+      { name: 'faqs', label: 'Course FAQs', type: F.PAIRS, full: true, multiline: true, labelPlaceholder: 'Question', valuePlaceholder: 'Answer' },
     ],
     defaults: {
       title: '', category: '', icon: '🎓', badge: '', level: 'Masters', duration: '',
       tuition: '', topPicks: '', note: '', description: '', published: true,
+      imageUrl: '', overview: '', highlights: [], curriculum: [], eligibility: [],
+      careerOutcomes: [], universities: [], feeBreakdown: [], faqs: [],
     },
     schema: z.object({
       title: req('Program title'),
       category: req('Field of study', 1),
       icon: opt(8), badge: opt(40), level: opt(60), duration: opt(60),
       tuition: opt(60), topPicks: opt(120), note: opt(160), description: opt(800),
+      imageUrl: opt(500),
+      overview: opt(4000),
+      highlights: z.array(z.string()).max(12).optional(),
+      curriculum: z.array(pairOf(80, 400)).max(20).optional(),
+      eligibility: z.array(z.string()).max(12).optional(),
+      careerOutcomes: z.array(z.string()).max(15).optional(),
+      universities: z.array(z.string()).max(30).optional(),
+      feeBreakdown: z.array(pairOf(80, 120)).max(12).optional(),
+      faqs: z.array(pairOf(300, 1500)).max(15).optional(),
       ...base,
     }),
   },

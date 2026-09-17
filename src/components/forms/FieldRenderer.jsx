@@ -100,7 +100,15 @@ export default function FieldRenderer({ field, control, register, error }) {
         <Field {...common}>
           {field.type === F.SWITCH && <Switch checked={ctrl.value} onChange={ctrl.onChange} label={field.switchLabel} />}
           {field.type === F.TAGS && <TagsInput value={ctrl.value} onChange={ctrl.onChange} />}
-          {field.type === F.PAIRS && <PairsInput value={ctrl.value} onChange={ctrl.onChange} />}
+          {field.type === F.PAIRS && (
+            <PairsInput
+              value={ctrl.value}
+              onChange={ctrl.onChange}
+              labelPlaceholder={field.labelPlaceholder}
+              valuePlaceholder={field.valuePlaceholder}
+              multiline={field.multiline}
+            />
+          )}
           {field.type === F.ICON && <IconPicker value={ctrl.value} onChange={ctrl.onChange} />}
           {field.type === F.GRADIENT && <GradientPicker value={ctrl.value} onChange={ctrl.onChange} />}
           {field.type === F.IMAGE && <ImagePicker value={ctrl.value} onChange={ctrl.onChange} />}
