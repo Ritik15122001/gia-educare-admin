@@ -58,7 +58,7 @@ export default function ImportLeadsModal({ open, onClose, onImport, importing })
       open={open}
       onClose={close}
       size="lg"
-      title="Import leads"
+      title="Import enquiries"
       footer={
         result ? (
           <Button variant="gold" onClick={close}>Done</Button>
@@ -68,7 +68,7 @@ export default function ImportLeadsModal({ open, onClose, onImport, importing })
             <div style={{ flex: 1 }} />
             <Button variant="ghost" onClick={close}>Cancel</Button>
             <Button variant="gold" loading={importing} disabled={!valid.length} onClick={runImport}>
-              Import {valid.length || ''} lead{valid.length === 1 ? '' : 's'}
+              Import {valid.length || ''} enquir{valid.length === 1 ? 'y' : 'ies'}
             </Button>
           </>
         )
@@ -152,7 +152,7 @@ export default function ImportLeadsModal({ open, onClose, onImport, importing })
             </p>
           )}
 
-          <Field label="If a lead already exists (same email or phone)">
+          <Field label="If this student is already in the list (same email or phone)">
             <Select
               value={duplicates}
               onChange={(e) => setDuplicates(e.target.value)}

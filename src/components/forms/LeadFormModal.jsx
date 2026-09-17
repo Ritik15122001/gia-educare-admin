@@ -47,16 +47,16 @@ export default function LeadFormModal({ open, onClose, onSubmit, saving }) {
       open={open}
       onClose={onClose}
       size="lg"
-      title="Add a lead"
+      title="Add an enquiry"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="gold" loading={saving} onClick={handleSubmit(onSubmit)}>Add lead</Button>
+          <Button variant="gold" loading={saving} onClick={handleSubmit(onSubmit)}>Add enquiry</Button>
         </>
       }
     >
       <p className="tiny muted" style={{ marginBottom: 16 }}>
-        For students who called, walked in or came from a fair. Website enquiries arrive here automatically.
+        For students who called, walked in or came from a fair. Enquiries from the website arrive here automatically.
       </p>
 
       <form className="form-grid" onSubmit={handleSubmit(onSubmit)}>

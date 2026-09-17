@@ -62,9 +62,9 @@ export function downloadTemplate() {
   guideSheet['!cols'] = [{ wch: 16 }, { wch: 10 }, { wch: 70 }];
 
   const book = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(book, sheet, 'Leads');
+  XLSX.utils.book_append_sheet(book, sheet, 'Enquiries');
   XLSX.utils.book_append_sheet(book, guideSheet, 'How to fill');
-  XLSX.writeFile(book, 'gia-leads-template.xlsx');
+  XLSX.writeFile(book, 'gia-enquiries-template.xlsx');
 }
 
 /** Reads an .xlsx/.csv File and maps its rows onto our field names. */

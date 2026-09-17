@@ -118,7 +118,7 @@ export default function Enquiries() {
     onSuccess: () => {
       invalidate();
       setAddingLead(false);
-      toast('Lead added');
+      toast('Enquiry added');
     },
     onError: (err) => toast(err.message, 'err'),
   });
@@ -127,7 +127,7 @@ export default function Enquiries() {
     mutationFn: (payload) => enquiryApi.import(payload),
     onSuccess: ({ data }) => {
       invalidate();
-      toast(`Imported ${data.imported} lead(s)`);
+      toast(`Imported ${data.imported} enquir${data.imported === 1 ? 'y' : 'ies'}`);
     },
     onError: (err) => toast(err.message, 'err'),
   });
@@ -181,7 +181,7 @@ export default function Enquiries() {
         )}
         {canImport && (
           <Button variant="gold" icon={Plus} onClick={() => setAddingLead(true)}>
-            Add lead
+            Add enquiry
           </Button>
         )}
       </PageHeader>
