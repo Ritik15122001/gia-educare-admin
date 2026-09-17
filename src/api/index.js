@@ -32,6 +32,8 @@ export const enquiryApi = {
   get: (id) => api.get(`/admin/enquiries/${id}`),
   update: (id, payload) => api.patch(`/admin/enquiries/${id}`, payload),
   addNote: (id, body) => api.post(`/admin/enquiries/${id}/notes`, { body }),
+  create: (payload) => api.post('/admin/enquiries', payload),
+  import: (payload) => api.post('/admin/enquiries/import', payload),
   remove: (id) => api.delete(`/admin/enquiries/${id}`),
   // Roles that can work leads and their active members — needs leads.assign.
   assignees: () => api.get('/admin/enquiries/assignees'),

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, Download, Trash2, Inbox } from 'lucide-react';
+import { Search, Download, Trash2, Inbox, Plus, Upload } from 'lucide-react';
 import { enquiryApi } from '../api';
 import { api } from '../api/client';
 import { useAuthStore, can } from '../store/authStore';
@@ -10,6 +10,8 @@ import { confirmDialog, toast } from '../store/uiStore';
 import { STATUS_OPTIONS, STATUS_TONE, ENQUIRY_STATUSES, BUDGET_RANGES } from '../utils/enquiryStatus';
 import { relativeTime } from '../utils/format';
 import PageHeader from '../components/layout/PageHeader';
+import LeadFormModal from '../components/forms/LeadFormModal';
+import ImportLeadsModal from '../components/forms/ImportLeadsModal';
 import { Card } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import IconButton from '../components/ui/IconButton';
@@ -28,6 +30,9 @@ export default function Enquiries() {
   const canEdit = can(user, 'leads.edit');
   const canAssign = can(user, 'leads.assign');
   const canExport = can(user, 'leads.export');
+  const canImport = can(user, 'leads.import');
+  const [addingLead, setAddingLead] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const scopedToAssigned = user?.leadScope === 'assigned';
 
   const [search, setSearch] = useState('');
@@ -108,6 +113,25 @@ export default function Enquiries() {
   const counts = meta?.counts || {};
 
   // The export endpoint needs the auth header, so fetch it and save the blob.
+  const createLead = useMutation({
+    mutationFn: (payload) => enquiryApi.create(payload),
+    onSuccess: () => {
+      invalidate();
+      setAddingLead(false);
+      toast('Lead added');
+    },
+    onError: (err) => toast(err.message, 'err'),
+  });
+
+  const importLeads = useMutation({
+    mutationFn: (payload) => enquiryApi.import(payload),
+    onSuccess: ({ data }) => {
+      invalidate();
+      toast(`Imported ${data.imported} lead(s)`);
+    },
+    onError: (err) => toast(err.message, 'err'),
+  });
+
   const handleExport = async () => {
     try {
       const res = await api.raw(enquiryApi.exportUrl(status));
@@ -138,16 +162,26 @@ export default function Enquiries() {
     <>
       <PageHeader
         crumb="Leads"
-        title={scopedToAssigned ? 'My enquiries' : 'Enquiries'}
+        title={scopedToAssigned ? 'My leads' : 'Leads'}
         sub={
           scopedToAssigned
             ? `Leads assigned to you or to the ${user?.roleName || 'your'} role, newest first.`
-            : 'Every form submission from the website, newest first.'
+            : 'Website enquiries plus the leads you add or import, newest first.'
         }
       >
         {canExport && (
           <Button variant="ghost" icon={Download} onClick={handleExport}>
             Export CSV
+          </Button>
+        )}
+        {canImport && (
+          <Button variant="ghost" icon={Upload} onClick={() => setImportOpen(true)}>
+            Import
+          </Button>
+        )}
+        {canImport && (
+          <Button variant="gold" icon={Plus} onClick={() => setAddingLead(true)}>
+            Add lead
           </Button>
         )}
       </PageHeader>
@@ -312,6 +346,23 @@ export default function Enquiries() {
 
         {meta && meta.pages > 1 && <Pagination meta={meta} onChange={setPage} />}
       </Card>
+      <LeadFormModal
+        open={addingLead}
+        onClose={() => setAddingLead(false)}
+        onSubmit={(values) => createLead.mutateAsync(values)}
+        saving={createLead.isPending}
+      />
+
+      <ImportLeadsModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        importing={importLeads.isPending}
+        onImport={async (payload) => {
+          const res = await importLeads.mutateAsync(payload).catch(() => null);
+          return res?.data || null;
+        }}
+      />
+
     </>
   );
 }

@@ -42,7 +42,7 @@ export default function Sidebar({ enquiryCount, onLogout }) {
         {item('/', 'Dashboard', LayoutDashboard)}
         {can(user, 'leads.view') && item(
           '/enquiries',
-          user?.leadScope === 'assigned' ? 'My enquiries' : 'Enquiries',
+          user?.leadScope === 'assigned' ? 'My leads' : 'Leads',
           Inbox,
           enquiryCount > 0 ? <span className="count">{enquiryCount}</span> : null,
         )}
