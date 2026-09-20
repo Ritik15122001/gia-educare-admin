@@ -31,7 +31,9 @@ export const enquiryApi = {
   list: (params = {}) => resourceApi.list('enquiries', params),
   get: (id) => api.get(`/admin/enquiries/${id}`),
   update: (id, payload) => api.patch(`/admin/enquiries/${id}`, payload),
-  addNote: (id, body) => api.post(`/admin/enquiries/${id}/notes`, { body }),
+  // Accepts plain text, or { body, status, followUpAt } to log a remark and
+  // reschedule the call in one request.
+  addNote: (id, payload) => api.post(`/admin/enquiries/${id}/notes`, typeof payload === 'string' ? { body: payload } : payload),
   create: (payload) => api.post('/admin/enquiries', payload),
   import: (payload) => api.post('/admin/enquiries/import', payload),
   remove: (id) => api.delete(`/admin/enquiries/${id}`),

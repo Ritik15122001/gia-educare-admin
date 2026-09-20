@@ -5,7 +5,8 @@ import { ArrowLeft, Mail, Phone, MessageSquare, Send, Trash2, UserCheck } from '
 import { enquiryApi } from '../api';
 import { useAuthStore, can } from '../store/authStore';
 import { confirmDialog, toast } from '../store/uiStore';
-import { STATUS_OPTIONS, STATUS_TONE } from '../utils/enquiryStatus';
+import { STATUS_OPTIONS, STATUS_TONE, statusLabel } from '../utils/enquiryStatus';
+import { followUpLabel, followUpTone, todayStr, plusDays } from '../utils/followUp';
 import { formatDateTime, relativeTime, initialsOf } from '../utils/format';
 import PageHeader from '../components/layout/PageHeader';
 import { Card, CardHead } from '../components/ui/Card';
@@ -13,7 +14,7 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
-import { Field, Select, Textarea } from '../components/forms/Field';
+import { Field, Select, Textarea, Input } from '../components/forms/Field';
 
 function DetailRow({ label, value }) {
   return (
@@ -46,6 +47,16 @@ export default function EnquiryDetail() {
     queryClient.invalidateQueries({ queryKey: ['enquiry', id] });
     queryClient.invalidateQueries({ queryKey: ['enquiries'] });
   };
+
+  const setFollowUp = useMutation({
+    mutationFn: (followUpAt) => enquiryApi.update(id, { followUpAt }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enquiry', id] });
+      queryClient.invalidateQueries({ queryKey: ['enquiries'] });
+      toast('Follow-up updated');
+    },
+    onError: (err) => toast(err.message, 'err'),
+  });
 
   const updateStatus = useMutation({
     mutationFn: (status) => enquiryApi.update(id, { status }),
@@ -213,13 +224,33 @@ export default function EnquiryDetail() {
 
         <Card>
           <CardHead title="Pipeline status" sub="Where this lead sits right now" />
-          <div className="card-pad" style={{ maxWidth: 280 }}>
+          <div className="card-pad">
             {canEdit ? (
-              <Field label="Status">
-                <Select value={e.status} options={STATUS_OPTIONS} onChange={(ev) => updateStatus.mutate(ev.target.value)} />
-              </Field>
+              <div className="form-grid">
+                <Field label="Status">
+                  <Select value={e.status} options={STATUS_OPTIONS} onChange={(ev) => updateStatus.mutate(ev.target.value)} />
+                </Field>
+                <Field label="Next follow-up" hint="Feeds the today and missed queues on the list.">
+                  <Input
+                    type="date"
+                    value={e.followUpAt ? String(e.followUpAt).slice(0, 10) : ''}
+                    onChange={(ev) => setFollowUp.mutate(ev.target.value || null)}
+                  />
+                </Field>
+                <div className="row-gap full" style={{ marginTop: -6 }}>
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => setFollowUp.mutate(todayStr())}>Today</button>
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => setFollowUp.mutate(plusDays(1))}>Tomorrow</button>
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => setFollowUp.mutate(plusDays(3))}>In 3 days</button>
+                  {e.followUpAt && (
+                    <button type="button" className="btn btn-sm btn-ghost" onClick={() => setFollowUp.mutate(null)}>Clear</button>
+                  )}
+                </div>
+              </div>
             ) : (
-              <Badge tone={STATUS_TONE[e.status]}>{e.status}</Badge>
+              <div className="row-gap">
+                <Badge tone={STATUS_TONE[e.status]}>{statusLabel(e.status)}</Badge>
+                {e.followUpAt && <Badge tone={followUpTone(e.followUpAt, e.status)}>Follow up {followUpLabel(e.followUpAt).toLowerCase()}</Badge>}
+              </div>
             )}
           </div>
         </Card>

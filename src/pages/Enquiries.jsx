@@ -1,16 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, Download, Trash2, Inbox, Plus, Upload } from 'lucide-react';
+import { Search, Download, Trash2, Inbox, Plus, Upload, Eye, MessageSquarePlus, CalendarClock, CalendarX2 } from 'lucide-react';
 import { enquiryApi } from '../api';
 import { api } from '../api/client';
 import { useAuthStore, can } from '../store/authStore';
 import { useDebounced } from '../hooks/useDebounced';
 import { confirmDialog, toast } from '../store/uiStore';
-import { STATUS_OPTIONS, STATUS_TONE, ENQUIRY_STATUSES, BUDGET_RANGES } from '../utils/enquiryStatus';
+import { STATUS_OPTIONS, STATUS_TONE, ENQUIRY_STATUSES, BUDGET_RANGES, statusLabel } from '../utils/enquiryStatus';
 import { relativeTime } from '../utils/format';
 import PageHeader from '../components/layout/PageHeader';
 import LeadFormModal from '../components/forms/LeadFormModal';
+import RemarkModal from '../components/forms/RemarkModal';
+import { followUpLabel, followUpTone } from '../utils/followUp';
 import ImportLeadsModal from '../components/forms/ImportLeadsModal';
 import { Card } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -41,6 +43,9 @@ export default function Enquiries() {
   const [referral, setReferral] = useState('');
   // '' | 'me' | 'none' | 'role:<key>'
   const [assigned, setAssigned] = useState('');
+  // '' | 'today' | 'missed' | 'upcoming' | 'none'
+  const [followUp, setFollowUp] = useState('');
+  const [remarkFor, setRemarkFor] = useState(null);
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounced(search, 300);
 
@@ -54,8 +59,9 @@ export default function Enquiries() {
       referral,
       assignedTo: assigned === 'me' || assigned === 'none' ? assigned : '',
       assignedRole: assigned.startsWith('role:') ? assigned.slice(5) : '',
+      followUp,
     }),
-    [page, debouncedSearch, status, budget, referral, assigned],
+    [page, debouncedSearch, status, budget, referral, assigned, followUp],
   );
 
   const { data: assigneeData } = useQuery({
@@ -99,6 +105,16 @@ export default function Enquiries() {
     onError: (err) => toast(err.message, 'err'),
   });
 
+  const addRemark = useMutation({
+    mutationFn: ({ id, payload }) => enquiryApi.addNote(id, payload),
+    onSuccess: () => {
+      invalidate();
+      setRemarkFor(null);
+      toast('Remark saved');
+    },
+    onError: (err) => toast(err.message, 'err'),
+  });
+
   const remove = useMutation({
     mutationFn: (id) => enquiryApi.remove(id),
     onSuccess: () => {
@@ -111,6 +127,7 @@ export default function Enquiries() {
   const rows = data?.data || [];
   const meta = data?.meta;
   const counts = meta?.counts || {};
+  const queues = meta?.followUps || { today: 0, missed: 0 };
 
   // The export endpoint needs the auth header, so fetch it and save the blob.
   const createLead = useMutation({
@@ -201,9 +218,28 @@ export default function Enquiries() {
             type="button"
             className={cn('btn', 'btn-sm', status === s ? 'btn-primary' : 'btn-ghost')}
             onClick={() => { setStatus(s); setPage(1); }}
-            style={{ textTransform: 'capitalize' }}
           >
-            {s} <span style={{ opacity: 0.7 }}>{counts[s] ?? 0}</span>
+            {statusLabel(s)} <span style={{ opacity: 0.7 }}>{counts[s] ?? 0}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Follow-up queues — what to work through today, and what slipped. */}
+      <div className="row-gap" style={{ marginBottom: 16 }}>
+        {[
+          { key: 'today', label: "Today's follow-ups", Icon: CalendarClock, count: queues.today },
+          { key: 'missed', label: 'Missed follow-ups', Icon: CalendarX2, count: queues.missed },
+          { key: 'upcoming', label: 'Upcoming', Icon: null, count: null },
+          { key: 'none', label: 'No follow-up set', Icon: null, count: null },
+        ].map(({ key, label, Icon, count }) => (
+          <button
+            key={key}
+            type="button"
+            className={cn('btn', 'btn-sm', followUp === key ? 'btn-primary' : 'btn-ghost')}
+            onClick={() => { setFollowUp(followUp === key ? '' : key); setPage(1); }}
+          >
+            {Icon && <Icon size={14} />} {label}
+            {count ? <span style={{ opacity: 0.7 }}>{count}</span> : null}
           </button>
         ))}
       </div>
@@ -267,11 +303,12 @@ export default function Enquiries() {
                 <tr>
                   <th>Student</th>
                   <th style={{ width: 190 }}>Contact</th>
-                  <th style={{ width: 130 }}>Destination</th>
-                  <th style={{ width: 130 }}>Budget</th>
-                  <th style={{ width: 150 }}>Referral</th>
-                  <th style={{ width: 190 }}>Assigned to</th>
-                  <th style={{ width: 150 }}>Status</th>
+                  <th style={{ width: 120 }}>Destination</th>
+                  <th style={{ width: 118 }}>Budget</th>
+                  <th style={{ width: 120 }}>Referral</th>
+                  <th style={{ width: 160 }}>Assigned to</th>
+                  <th style={{ width: 140 }}>Status</th>
+                  <th style={{ width: 132 }}>Follow-up</th>
                   <th style={{ width: 100 }}>Received</th>
                   <th style={{ width: 80 }} aria-label="Actions" />
                 </tr>
@@ -303,7 +340,7 @@ export default function Enquiries() {
                     <td>
                       {canAssign ? (
                         <AssignSelect
-                          style={{ padding: '5px 28px 5px 9px', fontSize: '.78rem' }}
+                          style={{ padding: '5px 28px 5px 9px', fontSize: '.78rem', minWidth: 132 }}
                           roles={assignees.roles}
                           users={assignees.users}
                           value={toAssignValue(row)}
@@ -322,7 +359,7 @@ export default function Enquiries() {
                     <td>
                       {canEdit ? (
                         <Select
-                          style={{ padding: '5px 28px 5px 9px', fontSize: '.78rem' }}
+                          style={{ padding: '5px 28px 5px 9px', fontSize: '.78rem', minWidth: 124 }}
                           value={row.status}
                           options={STATUS_OPTIONS}
                           onChange={(e) => updateStatus.mutate({ id: row.id, value: e.target.value })}
@@ -331,9 +368,22 @@ export default function Enquiries() {
                         <Badge tone={STATUS_TONE[row.status]}>{row.status}</Badge>
                       )}
                     </td>
+                    <td>
+                      {row.followUpAt ? (
+                        <Badge tone={followUpTone(row.followUpAt, row.status)}>{followUpLabel(row.followUpAt)}</Badge>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
                     <td className="tiny muted">{relativeTime(row.createdAt)}</td>
                     <td className="actions">
                       <div className="row-gap" style={{ justifyContent: 'flex-end', gap: 5 }}>
+                        <Link to={`/enquiries/${row.id}`} className="btn-icon" aria-label="View details" title="View details">
+                          <Eye />
+                        </Link>
+                        {canEdit && (
+                          <IconButton icon={MessageSquarePlus} label="Add remark" onClick={() => setRemarkFor(row)} />
+                        )}
                         {canDelete && <IconButton icon={Trash2} label="Delete" onClick={() => handleDelete(row)} />}
                       </div>
                     </td>
@@ -351,6 +401,14 @@ export default function Enquiries() {
         onClose={() => setAddingLead(false)}
         onSubmit={(values) => createLead.mutateAsync(values)}
         saving={createLead.isPending}
+      />
+
+      <RemarkModal
+        open={Boolean(remarkFor)}
+        lead={remarkFor}
+        saving={addRemark.isPending}
+        onClose={() => setRemarkFor(null)}
+        onSubmit={(payload) => addRemark.mutate({ id: remarkFor.id, payload })}
       />
 
       <ImportLeadsModal
