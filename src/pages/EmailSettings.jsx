@@ -94,7 +94,7 @@ function StatusBanner({ config }) {
   let tone = 'warn';
   let Icon = AlertTriangle;
   let title = 'Email is off';
-  let body = 'Leads are still saved in the admin, but no notification emails are sent. Add your SMTP details below and switch sending on.';
+  let body = 'Leads are still saved in the CRM, but no notification emails are sent. Add your SMTP details below and switch sending on.';
 
   if (status.problem) {
     tone = 'err';
@@ -111,7 +111,7 @@ function StatusBanner({ config }) {
     tone = 'info';
     Icon = Info;
     title = "Using the server's environment settings";
-    body = 'Emails currently go out through SMTP details set on the server. Save and switch on settings here to manage them from the admin instead.';
+    body = 'Emails currently go out through SMTP details set on the server. Save and switch on settings here to manage them from the CRM instead.';
   }
 
   return (
@@ -416,7 +416,7 @@ export default function EmailSettings() {
               <Controller control={control} name="notifyAdmin" render={({ field }) => <Switch checked={field.value} onChange={field.onChange} />} />
               <div>
                 <b>Email the team about every new lead</b>
-                <p className="tiny muted">Full lead details with one-tap Call, WhatsApp and Open-in-admin buttons.</p>
+                <p className="tiny muted">Full lead details with one-tap Call, WhatsApp and Open-in-CRM buttons.</p>
               </div>
             </div>
             <Field label="Team recipients" full error={errors.adminRecipients?.message} hint={`Separate several addresses with commas. If left blank, alerts go to ${config.fallbackRecipients || 'the email in Settings'}.`}>

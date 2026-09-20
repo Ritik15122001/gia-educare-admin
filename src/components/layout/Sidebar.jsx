@@ -34,7 +34,7 @@ export default function Sidebar({ enquiryCount, onLogout }) {
         </span>
         <span className="sidebar-title">
           GIA Educare
-          <small>Admin</small>
+          <small>CRM</small>
         </span>
       </div>
 

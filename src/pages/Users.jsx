@@ -134,7 +134,7 @@ export default function Users() {
   const handleDelete = async (user) => {
     const confirmed = await confirmDialog({
       title: 'Remove account?',
-      message: `${user.name} will lose access to this admin panel immediately.`,
+      message: `${user.name} will lose access to this CRM immediately.`,
       confirmLabel: 'Remove',
       tone: 'danger',
     });

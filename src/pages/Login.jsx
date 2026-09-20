@@ -51,7 +51,7 @@ export default function Login() {
         <div className="login-logo">
           <img src="/logo.jpg" alt="GIA Educare" />
         </div>
-        <h1>Admin sign in</h1>
+        <h1>CRM sign in</h1>
         <p className="sub">Manage content, leads and site settings.</p>
 
         {serverError && <div className="login-error">{serverError}</div>}

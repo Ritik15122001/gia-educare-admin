@@ -1,4 +1,4 @@
-# GIA Educare — admin panel
+# GIA Educare — CRM
 
 React + Vite admin for the GIA Educare website. Talks to `../backend`.
 
