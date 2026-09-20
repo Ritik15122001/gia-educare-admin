@@ -36,6 +36,7 @@ const SECURITY_OPTIONS = [
 const TYPE_LABELS = {
   'lead-admin-alert': 'Team lead alert',
   'lead-student-confirmation': 'Student confirmation',
+  'lead-assigned': 'Lead assigned',
   'account-created': 'New account',
   test: 'Test email',
 };
@@ -43,6 +44,7 @@ const TYPE_LABELS = {
 const TEMPLATES = [
   { key: 'admin-alert', label: 'Team lead alert' },
   { key: 'student-confirmation', label: 'Student confirmation' },
+  { key: 'lead-assigned', label: 'Lead assigned to a counsellor' },
   { key: 'account-created', label: 'New team account' },
   { key: 'test', label: 'Test email' },
 ];
@@ -419,7 +421,7 @@ export default function EmailSettings() {
                 <p className="tiny muted">Full lead details with one-tap Call, WhatsApp and Open-in-CRM buttons.</p>
               </div>
             </div>
-            <Field label="Team recipients" full error={errors.adminRecipients?.message} hint={`Separate several addresses with commas. If left blank, alerts go to ${config.fallbackRecipients || 'the email in Settings'}.`}>
+            <Field label="Team recipients" full error={errors.adminRecipients?.message} hint="Separate several addresses with commas. Leave blank to alert every active team member who can see leads.">
               <Input {...register('adminRecipients')} placeholder="leads@giaeducare.com, counsellors@giaeducare.com" />
             </Field>
             <div className="email-toggle">

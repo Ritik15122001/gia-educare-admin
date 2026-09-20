@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Inbox, Settings, Users2, Image, FileText, LogOut, ExternalLink, ShieldCheck, Mail, Wallet,
+  LayoutDashboard, Inbox, Settings, Users2, Image, FileText, LogOut, ExternalLink, ShieldCheck, Mail, Wallet, Bell,
 } from 'lucide-react';
 import { RESOURCE_LIST } from '../../config/resources';
 import { useAuthStore, can, canModule } from '../../store/authStore';
@@ -9,7 +9,7 @@ import IconButton from '../ui/IconButton';
 import { cn } from '../../utils/cn';
 import { SITE_URL } from '../../config/site';
 
-export default function Sidebar({ enquiryCount, onLogout }) {
+export default function Sidebar({ enquiryCount, unreadCount = 0, onLogout }) {
   const user = useAuthStore((s) => s.user);
   const closeSidebar = useUiStore((s) => s.closeSidebar);
   const isSuperAdmin = user?.role === 'super_admin';
@@ -47,6 +47,7 @@ export default function Sidebar({ enquiryCount, onLogout }) {
           enquiryCount > 0 ? <span className="count">{enquiryCount}</span> : null,
         )}
 
+        {item('/notifications', 'Notifications', Bell, unreadCount > 0 ? <span className="count">{unreadCount}</span> : null)}
         {canModule(user, 'finance') && item('/finance', 'Expenses & P&L', Wallet)}
 
         {visibleResources.length > 0 && (

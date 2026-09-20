@@ -21,6 +21,7 @@ const Users = lazy(() => import('./pages/Users'));
 const Roles = lazy(() => import('./pages/Roles'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Finance = lazy(() => import('./pages/Finance'));
+const Notifications = lazy(() => import('./pages/Notifications'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +50,8 @@ function Routing() {
         >
           <Route index element={<Dashboard />} />
           <Route path="profile" element={<Profile />} />
+          {/* Personal feed — every signed-in user has one. */}
+          <Route path="notifications" element={<Notifications />} />
 
           {/* Each screen is gated by the same permission the API enforces.
               The content route checks its own module — it varies per :resource. */}

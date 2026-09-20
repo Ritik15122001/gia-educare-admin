@@ -8,7 +8,7 @@ import Toasts from '../ui/Toasts';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useUiStore, toast } from '../../store/uiStore';
 import { useAuthStore, useCan } from '../../store/authStore';
-import { authApi, enquiryApi } from '../../api';
+import { authApi, enquiryApi, notificationApi } from '../../api';
 import { getResourceConfig } from '../../config/resources';
 
 // Human label for the current route, shown in the top bar.
@@ -20,6 +20,7 @@ function useRouteLabel() {
   if (first === 'content') return { group: 'Content', label: getResourceConfig(second)?.label || second };
   if (first === 'enquiries') return { group: 'Leads', label: second ? 'Enquiry detail' : 'Enquiries' };
   if (first === 'finance') return { group: 'Finance', label: 'Expenses & P&L' };
+  if (first === 'notifications') return { group: null, label: 'Notifications' };
   if (first === 'settings' && second === 'email') return { group: 'Site', label: 'Email & SMTP' };
 
   const LABELS = { sections: 'Section copy', media: 'Media', settings: 'Settings', users: 'Team accounts', roles: 'Roles & permissions', profile: 'Your profile' };
@@ -44,6 +45,13 @@ export default function AppLayout() {
     enabled: canViewLeads,
   });
 
+  // Unread badge on the nav; the feed itself is fetched by the page.
+  const { data: notifications } = useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: () => notificationApi.list({ limit: 1, unread: 'true' }),
+    refetchInterval: 60_000,
+  });
+
   useEffect(() => {
     document.body.classList.toggle('sidebar-open', sidebarOpen);
   }, [sidebarOpen]);
@@ -61,7 +69,11 @@ export default function AppLayout() {
 
   return (
     <div className="app">
-      <Sidebar enquiryCount={newEnquiries?.meta?.total || 0} onLogout={handleLogout} />
+      <Sidebar
+        enquiryCount={newEnquiries?.meta?.total || 0}
+        unreadCount={notifications?.meta?.unread || 0}
+        onLogout={handleLogout}
+      />
       <div className="sidebar-scrim" onClick={closeSidebar} />
 
       <div className="main">

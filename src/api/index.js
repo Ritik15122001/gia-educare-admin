@@ -60,6 +60,15 @@ export const financeApi = {
   exportUrl: (params) => `/admin/finance/export${financeQs(params)}`,
 };
 
+// --- notifications ----------------------------------------------------------
+// Personal feed: new leads, assignments. Everyone reads their own.
+export const notificationApi = {
+  list: (params = {}) => resourceApi.list('notifications', params),
+  markRead: (id) => api.patch(`/admin/notifications/${id}/read`),
+  markAllRead: () => api.post('/admin/notifications/read-all'),
+  clearRead: () => api.delete('/admin/notifications/read'),
+};
+
 // --- sections, settings, users, media, dashboard --------------------------
 export const sectionApi = {
   list: () => api.get('/admin/sections'),

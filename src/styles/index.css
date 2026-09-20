@@ -442,3 +442,6 @@ tr.drop-target td{box-shadow:inset 0 2px 0 var(--gold);}
   content:"";position:absolute;left:0;right:0;top:-30px;height:30px;pointer-events:none;
   background:linear-gradient(rgba(8,25,47,0),var(--ink));
 }
+
+/* Unread notification dot on the feed's row icon. */
+.avatar.is-unread{background:var(--gold);color:var(--ink);}
