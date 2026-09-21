@@ -17,7 +17,7 @@ import { Field, Input, Textarea } from '../components/forms/Field';
 
 // Group `home.hero` → "Home", `about.team` → "About" for a readable list.
 const pageOf = (key) => key.split('.')[0];
-const PAGE_LABELS = { home: 'Home', destinations: 'Destinations', courses: 'Courses', about: 'About', contact: 'Contact' };
+const PAGE_LABELS = { home: 'Home', destinations: 'Destinations', courses: 'Courses', about: 'About', contact: 'Contact', legal: 'Legal pages' };
 
 function EditModal({ section, onClose, onSave, saving }) {
   const { register, handleSubmit } = useForm({

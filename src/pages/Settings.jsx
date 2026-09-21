@@ -19,6 +19,15 @@ import { Controller } from 'react-hook-form';
 
 const emailOrEmpty = z.string().trim().email('Enter a valid email').or(z.literal(''));
 
+// Footer policy links: either a path on the website ("/privacy-policy") or a
+// full link to a policy hosted elsewhere.
+const legalLink = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((v) => !v || /^(https?:\/\/|\/)/i.test(v), 'Use a page path like /privacy-policy, or a full https:// link')
+  .optional();
+
 const schema = z.object({
   brand: z.string().trim().min(1, 'Brand name is required').max(80),
   tagline: z.string().trim().max(120).optional(),
@@ -52,9 +61,11 @@ const schema = z.object({
     .optional(),
   legalEntity: z.string().trim().max(160).optional(),
   legalLinks: z.object({
-    privacy: z.string().trim().max(500).refine((v) => !v || /^https?:\/\//i.test(v), 'Use a full https:// link').optional(),
-    terms: z.string().trim().max(500).refine((v) => !v || /^https?:\/\//i.test(v), 'Use a full https:// link').optional(),
-    refund: z.string().trim().max(500).refine((v) => !v || /^https?:\/\//i.test(v), 'Use a full https:// link').optional(),
+    // A path such as /privacy-policy points at the website's own policy pages;
+    // a full https:// link is still accepted for a policy hosted elsewhere.
+    privacy: legalLink,
+    terms: legalLink,
+    refund: legalLink,
   }),
   mapUrl: z.string().trim().max(500).refine((v) => !v || /^https?:\/\//i.test(v), 'Use a full https:// link').optional(),
   socials: z.object({
@@ -327,14 +338,19 @@ export default function Settings() {
               <Field label="Legal entity line" full error={errors.legalEntity?.message} hint="Shown in the footer after the brand name: © 2026 GIA Educare | …">
                 <Input {...register('legalEntity')} placeholder="A Study Abroad Unit of HolidayAlong Hospitality LLP" />
               </Field>
-              <Field label="Privacy policy link" error={errors.legalLinks?.privacy?.message}>
-                <Input {...register('legalLinks.privacy')} placeholder="https://giaeducare.com/privacy-policy" />
+              <Field
+                label="Privacy policy link"
+                full
+                error={errors.legalLinks?.privacy?.message}
+                hint="The website serves these three pages itself — keep the paths below unless a policy is hosted somewhere else. The wording lives in the website code; the page intro is editable under Sections → Legal pages."
+              >
+                <Input {...register('legalLinks.privacy')} placeholder="/privacy-policy" />
               </Field>
               <Field label="Terms of service link" error={errors.legalLinks?.terms?.message}>
-                <Input {...register('legalLinks.terms')} placeholder="https://giaeducare.com/terms-of-service" />
+                <Input {...register('legalLinks.terms')} placeholder="/terms-of-service" />
               </Field>
               <Field label="Refund policy link" error={errors.legalLinks?.refund?.message}>
-                <Input {...register('legalLinks.refund')} placeholder="https://giaeducare.com/refund-policy" />
+                <Input {...register('legalLinks.refund')} placeholder="/refund-policy" />
               </Field>
               <Field label="Google Maps link" error={errors.mapUrl?.message} hint="Paste a link like https://maps.google.com/?q=28.580475,77.320351 — it's embedded on the contact page.">
                 <Input {...register('mapUrl')} placeholder="https://maps.google.com/?q=…" />
