@@ -8,6 +8,7 @@ import { Field, Input, Select, Textarea } from './Field';
 import {
   BUDGET_OPTIONS, LEVEL_OPTIONS, INTAKE_OPTIONS, TEST_OPTIONS, QUAL_OPTIONS,
 } from '../../utils/leadImport';
+import { LEAD_TYPES } from '../../utils/leadType';
 
 const schema = z.object({
   name: z.string().trim().min(2, 'Name is required').max(120),
@@ -20,6 +21,7 @@ const schema = z.object({
   test: z.string().optional(),
   qual: z.string().optional(),
   budget: z.string().optional(),
+  leadType: z.enum(['b2c', 'b2b']),
   source: z.string().trim().max(60).optional(),
   referral: z.string().trim().max(120).optional(),
   message: z.string().trim().max(2000).optional(),
@@ -27,7 +29,7 @@ const schema = z.object({
 
 const EMPTY = {
   name: '', email: '', code: '+91', phone: '', destination: '', level: '', intake: '',
-  test: '', qual: '', budget: '', source: 'walk-in', referral: '', message: '',
+  test: '', qual: '', budget: '', leadType: 'b2c', source: 'walk-in', referral: '', message: '',
 };
 
 const asOptions = (list) => list.map((v) => ({ value: v, label: v }));
@@ -97,6 +99,10 @@ export default function LeadFormModal({ open, onClose, onSubmit, saving }) {
 
         <Field label="Budget">
           <Select {...register('budget')} options={asOptions(BUDGET_OPTIONS)} placeholder="Not specified" />
+        </Field>
+
+        <Field label="Lead type" hint="B2C is a student; B2B is a partner, agent or school.">
+          <Select {...register('leadType')} options={LEAD_TYPES.map((t) => ({ value: t.value, label: t.label }))} />
         </Field>
 
         <Field label="Source" hint="Where this lead came from.">

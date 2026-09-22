@@ -39,7 +39,14 @@ export const enquiryApi = {
   remove: (id) => api.delete(`/admin/enquiries/${id}`),
   // Roles that can work leads and their active members — needs leads.assign.
   assignees: () => api.get('/admin/enquiries/assignees'),
-  exportUrl: (status) => `/admin/enquiries/export${status ? `?status=${status}` : ''}`,
+  exportUrl: (params = {}) => {
+    // Called with a plain status string historically; keep that working.
+    const obj = typeof params === 'string' ? { status: params } : params;
+    const qs = new URLSearchParams(
+      Object.entries(obj).filter(([, v]) => v !== '' && v !== undefined && v !== null),
+    ).toString();
+    return `/admin/enquiries/export${qs ? `?${qs}` : ''}`;
+  },
 };
 
 // --- finance ----------------------------------------------------------------
@@ -58,6 +65,46 @@ export const financeApi = {
   update: (id, payload) => api.patch(`/admin/finance/entries/${id}`, payload),
   remove: (id) => api.delete(`/admin/finance/entries/${id}`),
   exportUrl: (params) => `/admin/finance/export${financeQs(params)}`,
+};
+
+// --- lead attachments -------------------------------------------------------
+// Documents on one enquiry. Upload is multipart, so it bypasses the JSON helper.
+export const leadDocumentApi = {
+  list: (leadId) => api.get(`/admin/enquiries/${leadId}/documents`),
+  upload: (leadId, file, label = '') => {
+    const form = new FormData();
+    form.append('file', file);
+    if (label) form.append('label', label);
+    return api.post(`/admin/enquiries/${leadId}/documents`, form, { isForm: true });
+  },
+  download: (leadId, docId, filename) => api.download(`/admin/enquiries/${leadId}/documents/${docId}`, filename),
+  remove: (leadId, docId) => api.delete(`/admin/enquiries/${leadId}/documents/${docId}`),
+};
+
+// --- important formats ------------------------------------------------------
+// The approved WhatsApp / email / SMS wording the team copies.
+export const formatApi = {
+  options: () => api.get('/admin/formats/options'),
+  list: (params = {}) => resourceApi.list('formats', params),
+  create: (payload) => api.post('/admin/formats', payload),
+  update: (id, payload) => api.patch(`/admin/formats/${id}`, payload),
+  remove: (id) => api.delete(`/admin/formats/${id}`),
+};
+
+// --- important documents ----------------------------------------------------
+// The shared library. Uploading needs documents.edit — super admin by default.
+export const libraryApi = {
+  options: () => api.get('/admin/documents/options'),
+  list: (params = {}) => resourceApi.list('documents', params),
+  upload: (file, meta = {}) => {
+    const form = new FormData();
+    form.append('file', file);
+    Object.entries(meta).forEach(([k, v]) => { if (v) form.append(k, v); });
+    return api.post('/admin/documents', form, { isForm: true });
+  },
+  update: (id, payload) => api.patch(`/admin/documents/${id}`, payload),
+  download: (id, filename) => api.download(`/admin/documents/${id}/download`, filename),
+  remove: (id) => api.delete(`/admin/documents/${id}`),
 };
 
 // --- notifications ----------------------------------------------------------

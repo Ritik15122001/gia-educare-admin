@@ -21,6 +21,8 @@ function useRouteLabel() {
   if (first === 'enquiries') return { group: 'Leads', label: second ? 'Enquiry detail' : 'Enquiries' };
   if (first === 'finance') return { group: 'Finance', label: 'Expenses & P&L' };
   if (first === 'notifications') return { group: null, label: 'Notifications' };
+  if (first === 'formats') return { group: 'Team workspace', label: 'Important formats' };
+  if (first === 'documents') return { group: 'Team workspace', label: 'Important documents' };
   if (first === 'settings' && second === 'email') return { group: 'Site', label: 'Email & SMTP' };
 
   const LABELS = { sections: 'Section copy', media: 'Media', settings: 'Settings', users: 'Team accounts', roles: 'Roles & permissions', profile: 'Your profile' };

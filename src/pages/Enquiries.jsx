@@ -18,6 +18,7 @@ import { Card } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import IconButton from '../components/ui/IconButton';
 import Badge from '../components/ui/Badge';
+import { LEAD_TYPES, leadTypeLabel, leadTypeTone } from '../utils/leadType';
 import { Input, Select } from '../components/forms/Field';
 import EmptyState from '../components/ui/EmptyState';
 import Pagination from '../components/data/Pagination';
@@ -45,6 +46,7 @@ export default function Enquiries() {
   const [assigned, setAssigned] = useState('');
   // '' | 'today' | 'missed' | 'upcoming' | 'none'
   const [followUp, setFollowUp] = useState('');
+  const [leadType, setLeadType] = useState('');
   const [remarkFor, setRemarkFor] = useState(null);
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounced(search, 300);
@@ -60,8 +62,9 @@ export default function Enquiries() {
       assignedTo: assigned === 'me' || assigned === 'none' ? assigned : '',
       assignedRole: assigned.startsWith('role:') ? assigned.slice(5) : '',
       followUp,
+      leadType,
     }),
-    [page, debouncedSearch, status, budget, referral, assigned, followUp],
+    [page, debouncedSearch, status, budget, referral, assigned, followUp, leadType],
   );
 
   const { data: assigneeData } = useQuery({
@@ -151,7 +154,7 @@ export default function Enquiries() {
 
   const handleExport = async () => {
     try {
-      const res = await api.raw(enquiryApi.exportUrl(status));
+      const res = await api.raw(enquiryApi.exportUrl({ status, leadType }));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -220,6 +223,29 @@ export default function Enquiries() {
             onClick={() => { setStatus(s); setPage(1); }}
           >
             {statusLabel(s)} <span style={{ opacity: 0.7 }}>{counts[s] ?? 0}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* B2C vs B2B. A lead written before the field existed counts as B2C. */}
+      <div className="row-gap" style={{ marginBottom: 16 }}>
+        <span className="tiny muted" style={{ alignSelf: 'center', marginRight: 2 }}>Lead type</span>
+        <button
+          type="button"
+          className={cn('btn', 'btn-sm', leadType === '' ? 'btn-primary' : 'btn-ghost')}
+          onClick={() => { setLeadType(''); setPage(1); }}
+        >
+          All <span style={{ opacity: 0.7 }}>{meta?.total ?? 0}</span>
+        </button>
+        {LEAD_TYPES.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            title={t.hint}
+            className={cn('btn', 'btn-sm', leadType === t.value ? 'btn-primary' : 'btn-ghost')}
+            onClick={() => { setLeadType(leadType === t.value ? '' : t.value); setPage(1); }}
+          >
+            {t.label} <span style={{ opacity: 0.7 }}>{meta?.leadTypes?.[t.value] ?? 0}</span>
           </button>
         ))}
       </div>
@@ -302,6 +328,7 @@ export default function Enquiries() {
               <thead>
                 <tr>
                   <th>Student</th>
+                  <th style={{ width: 66 }}>Type</th>
                   <th style={{ width: 190 }}>Contact</th>
                   <th style={{ width: 120 }}>Destination</th>
                   <th style={{ width: 118 }}>Budget</th>
@@ -321,6 +348,9 @@ export default function Enquiries() {
                         <div className="row-title">{row.name}</div>
                         <div className="row-sub">{row.level || '—'}{row.qual ? ` · ${row.qual}` : ''}</div>
                       </Link>
+                    </td>
+                    <td>
+                      <Badge tone={leadTypeTone(row)}>{leadTypeLabel(row)}</Badge>
                     </td>
                     <td>
                       <div className="tiny">{row.email}</div>

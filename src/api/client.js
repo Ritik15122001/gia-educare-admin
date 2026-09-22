@@ -81,6 +81,21 @@ export const api = {
     return request(path, { method: 'POST', body: form, isForm: true });
   },
   raw: (path, opts) => request(path, { ...opts, raw: true }),
+  // A file behind an Authorization header cannot be fetched with a plain <a
+  // href>, so pull the bytes and hand the browser a blob URL instead.
+  download: async (path, filename) => {
+    const res = await request(path, { raw: true });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'download';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // Revoke on the next tick — Safari needs the URL to outlive the click.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
 };
 
 export { BASE_URL };

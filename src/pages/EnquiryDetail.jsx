@@ -10,11 +10,13 @@ import { followUpLabel, followUpTone, todayStr, plusDays } from '../utils/follow
 import { formatDateTime, relativeTime, initialsOf } from '../utils/format';
 import PageHeader from '../components/layout/PageHeader';
 import { Card, CardHead } from '../components/ui/Card';
+import LeadDocuments from '../components/data/LeadDocuments';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import { Field, Select, Textarea, Input } from '../components/forms/Field';
+import { LEAD_TYPES, leadTypeOf, leadTypeLabel, leadTypeTone } from '../utils/leadType';
 
 function DetailRow({ label, value }) {
   return (
@@ -55,6 +57,12 @@ export default function EnquiryDetail() {
       queryClient.invalidateQueries({ queryKey: ['enquiries'] });
       toast('Follow-up updated');
     },
+    onError: (err) => toast(err.message, 'err'),
+  });
+
+  const setLeadType = useMutation({
+    mutationFn: (leadType) => enquiryApi.update(id, { leadType }),
+    onSuccess: () => { toast('Lead type updated'); invalidate(); },
     onError: (err) => toast(err.message, 'err'),
   });
 
@@ -135,6 +143,7 @@ export default function EnquiryDetail() {
       <div className="stack">
         <Card>
           <CardHead title="Contact">
+            <Badge tone={leadTypeTone(e)}>{leadTypeLabel(e)}</Badge>
             <Badge tone={STATUS_TONE[e.status]}>{e.status}</Badge>
           </CardHead>
           <div className="card-pad row-gap">
@@ -230,6 +239,13 @@ export default function EnquiryDetail() {
                 <Field label="Status">
                   <Select value={e.status} options={STATUS_OPTIONS} onChange={(ev) => updateStatus.mutate(ev.target.value)} />
                 </Field>
+                <Field label="Lead type" hint="B2C is a student; B2B is a partner, agent or school.">
+                  <Select
+                    value={leadTypeOf(e)}
+                    options={LEAD_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+                    onChange={(ev) => setLeadType.mutate(ev.target.value)}
+                  />
+                </Field>
                 <Field label="Next follow-up" hint="Feeds the today and missed queues on the list.">
                   <Input
                     type="date"
@@ -254,6 +270,8 @@ export default function EnquiryDetail() {
             )}
           </div>
         </Card>
+
+        <LeadDocuments leadId={id} canEdit={canEdit} />
 
         <Card>
           <CardHead title={`Notes (${e.notes?.length || 0})`} sub="Visible to your team only" />

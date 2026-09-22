@@ -22,6 +22,8 @@ const Roles = lazy(() => import('./pages/Roles'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Finance = lazy(() => import('./pages/Finance'));
 const Notifications = lazy(() => import('./pages/Notifications'));
+const Formats = lazy(() => import('./pages/Formats'));
+const Documents = lazy(() => import('./pages/Documents'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +62,14 @@ function Routing() {
             <Route path="enquiries" element={<Enquiries />} />
             <Route path="enquiries/:id" element={<EnquiryDetail />} />
           </Route>
+          <Route element={<ProtectedRoute permission={['formats.view', 'formats.edit']} />}>
+            <Route path="formats" element={<Formats />} />
+          </Route>
+
+          <Route element={<ProtectedRoute permission={['documents.view', 'documents.edit']} />}>
+            <Route path="documents" element={<Documents />} />
+          </Route>
+
           <Route element={<ProtectedRoute permission={['finance.view', 'finance.edit']} />}>
             <Route path="finance" element={<Finance />} />
           </Route>

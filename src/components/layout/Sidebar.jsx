@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Inbox, Settings, Users2, Image, FileText, LogOut, ExternalLink, ShieldCheck, Mail, Wallet, Bell,
+  MessageSquareText, FolderOpen,
 } from 'lucide-react';
 import { RESOURCE_LIST } from '../../config/resources';
 import { useAuthStore, can, canModule } from '../../store/authStore';
@@ -49,6 +50,12 @@ export default function Sidebar({ enquiryCount, unreadCount = 0, onLogout }) {
 
         {item('/notifications', 'Notifications', Bell, unreadCount > 0 ? <span className="count">{unreadCount}</span> : null)}
         {canModule(user, 'finance') && item('/finance', 'Expenses & P&L', Wallet)}
+
+        {canModule(user, 'formats') || canModule(user, 'documents') ? (
+          <div className="nav-group-label">Workspace</div>
+        ) : null}
+        {canModule(user, 'formats') && item('/formats', 'Important formats', MessageSquareText)}
+        {canModule(user, 'documents') && item('/documents', 'Important documents', FolderOpen)}
 
         {visibleResources.length > 0 && (
           <>
