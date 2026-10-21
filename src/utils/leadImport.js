@@ -1,5 +1,34 @@
 import * as XLSX from 'xlsx';
 
+export const BUDGET_OPTIONS = ['Up to ₹10 Lakh', '₹10 – 20 Lakh', '₹20 – 30 Lakh', '₹30 – 50 Lakh', 'Above ₹50 Lakh'];
+export const LEVEL_OPTIONS = ['Masters', 'Bachelors', 'MBA', 'PhD', 'Diploma / Pathway'];
+
+// Mirrors buildIntakeDates in the website's src/data/formOptions.js — a
+// hardcoded list of years goes stale, so this generates the next four
+// intakes that are at least six months out and keeps moving with the
+// calendar instead of needing a yearly edit.
+const INTAKE_MONTHS = [0, 4, 8]; // Jan, May, Sep
+const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function buildIntakeDates(count = 4, leadMonths = 6, from = new Date()) {
+  const cutoff = new Date(from.getFullYear(), from.getMonth() + leadMonths, 1);
+  const dates = [];
+  for (let year = from.getFullYear(); dates.length < count; year += 1) {
+    for (const month of INTAKE_MONTHS) {
+      const candidate = new Date(year, month, 1);
+      if (candidate >= cutoff) {
+        dates.push(`${MONTH_ABBR[month]} ${year}`);
+        if (dates.length === count) break;
+      }
+    }
+  }
+  return dates;
+}
+
+export const INTAKE_OPTIONS = [...buildIntakeDates(), 'Flexible'];
+export const TEST_OPTIONS = ['Not taken yet', 'Preparing now', 'IELTS done', 'TOEFL done', 'PTE done', 'GRE / GMAT done'];
+export const QUAL_OPTIONS = ['Class 12', 'Bachelors — final year', 'Bachelors — completed', 'Masters', 'Working professional'];
+
 // The columns staff see in the template, mapped to the API's field names.
 // Header matching is case- and space-insensitive so a hand-edited file still
 // lines up.
@@ -10,7 +39,7 @@ export const LEAD_COLUMNS = [
   { header: 'Country Code', field: 'code', example: '+91' },
   { header: 'Destination', field: 'destination', example: 'Canada' },
   { header: 'Study Level', field: 'level', example: 'Masters' },
-  { header: 'Intake', field: 'intake', example: 'Sep 2027' },
+  { header: 'Intake', field: 'intake', example: INTAKE_OPTIONS[1] || INTAKE_OPTIONS[0] },
   { header: 'Test Status', field: 'test', example: 'IELTS done' },
   { header: 'Qualification', field: 'qual', example: 'Bachelors — completed' },
   { header: 'Budget', field: 'budget', example: '₹20 – 30 Lakh' },
@@ -18,12 +47,6 @@ export const LEAD_COLUMNS = [
   { header: 'Referred By', field: 'referral', example: 'Rhea Malhotra' },
   { header: 'Notes', field: 'message', example: 'Wants a scholarship, backlogs: 2' },
 ];
-
-export const BUDGET_OPTIONS = ['Up to ₹10 Lakh', '₹10 – 20 Lakh', '₹20 – 30 Lakh', '₹30 – 50 Lakh', 'Above ₹50 Lakh'];
-export const LEVEL_OPTIONS = ['Masters', 'Bachelors', 'MBA', 'PhD', 'Diploma / Pathway'];
-export const INTAKE_OPTIONS = ['Jan 2027', 'May 2027', 'Sep 2027', 'Jan 2028', 'Flexible'];
-export const TEST_OPTIONS = ['Not taken yet', 'Preparing now', 'IELTS done', 'TOEFL done', 'PTE done', 'GRE / GMAT done'];
-export const QUAL_OPTIONS = ['Class 12', 'Bachelors — final year', 'Bachelors — completed', 'Masters', 'Working professional'];
 
 const normalise = (s) => String(s || '').toLowerCase().replace(/[\s_-]/g, '');
 
@@ -33,7 +56,7 @@ export function downloadTemplate() {
 
   const sample = [
     LEAD_COLUMNS.map((c) => c.example),
-    ['Priya Nair', 'priya.nair@example.com', '9123456780', '+91', 'United Kingdom', 'Masters', 'Jan 2027', 'Preparing now', 'Bachelors — final year', '₹10 – 20 Lakh', 'Walk-in', '', ''],
+    ['Priya Nair', 'priya.nair@example.com', '9123456780', '+91', 'United Kingdom', 'Masters', INTAKE_OPTIONS[0], 'Preparing now', 'Bachelors — final year', '₹10 – 20 Lakh', 'Walk-in', '', ''],
   ];
 
   const sheet = XLSX.utils.aoa_to_sheet([headers, ...sample]);
