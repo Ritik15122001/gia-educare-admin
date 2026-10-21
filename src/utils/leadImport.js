@@ -3,24 +3,16 @@ import * as XLSX from 'xlsx';
 export const BUDGET_OPTIONS = ['Up to ₹10 Lakh', '₹10 – 20 Lakh', '₹20 – 30 Lakh', '₹30 – 50 Lakh', 'Above ₹50 Lakh'];
 export const LEVEL_OPTIONS = ['Masters', 'Bachelors', 'MBA', 'PhD', 'Diploma / Pathway'];
 
-// Mirrors buildIntakeDates in the website's src/data/formOptions.js — a
-// hardcoded list of years goes stale, so this generates the next four
-// intakes that are at least six months out and keeps moving with the
-// calendar instead of needing a yearly edit.
-const INTAKE_MONTHS = [0, 4, 8]; // Jan, May, Sep
+// Mirrors buildIntakeDates in the website's src/data/formOptions.js — the
+// next six calendar months, starting next month, so the list keeps moving
+// with the calendar instead of needing a manual edit. 'Flexible' is last.
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function buildIntakeDates(count = 4, leadMonths = 6, from = new Date()) {
-  const cutoff = new Date(from.getFullYear(), from.getMonth() + leadMonths, 1);
+function buildIntakeDates(count = 6, from = new Date()) {
   const dates = [];
-  for (let year = from.getFullYear(); dates.length < count; year += 1) {
-    for (const month of INTAKE_MONTHS) {
-      const candidate = new Date(year, month, 1);
-      if (candidate >= cutoff) {
-        dates.push(`${MONTH_ABBR[month]} ${year}`);
-        if (dates.length === count) break;
-      }
-    }
+  for (let i = 1; i <= count; i += 1) {
+    const d = new Date(from.getFullYear(), from.getMonth() + i, 1);
+    dates.push(`${MONTH_ABBR[d.getMonth()]} ${d.getFullYear()}`);
   }
   return dates;
 }
